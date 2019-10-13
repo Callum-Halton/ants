@@ -20,19 +20,6 @@ window.onload = () => {
 			return Math.atan(ratio) * 360 / (2 * Math.PI);
 		}
 
-		// returns an angle in degrees
-		static safe_atan(dx, dy) {
-			if (dx == 0) {
-				// console.log("In the special case")
-				if (dy > 0) {
-					return 0;
-				} else {
-					return 90;
-				}
-			} else {
-				return this.atan(dy/dx);
-			}
-		}
 	}
 
 	class Food {
@@ -73,31 +60,56 @@ window.onload = () => {
 			this.y += step * MyMath.sin(this.d);
 		}
 		
+		can_see(target) {
+			if (Math.hypot(this.x - target.x, this.y - target.y) <= (this.vision + this.r + target.r)) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		// Ideally, this would be a private method
+		angle_to(target) {
+			let dx = target.x - this.x;
+			let dy = target.y - this.y;
+			let angle = MyMath.atan(dy/dx);
+
+			if (dx == 0) {
+				// Handle case where dy/dx is undefined.
+				if (dy > 0) {
+					// Below target
+					return 90;
+				} else {
+					// Above target
+					return 270;
+				}
+			} else if (dy > 0) {
+				if (dx > 0) {
+					// Top-right quadrant
+					angle = angle;
+				} else {
+					// Top-left quadrant
+					angle = 90 - angle;
+				}
+			} else {
+				if (dx > 0) {
+					// Bottom-right quadrant
+					angle = 360 + angle;
+				} else {
+					// Bottom-left quadrant
+					angle = 180 + angle;
+				}
+			}
+			return angle;
+		}
+
 		update() {
 
 			this.move(this.s);
 
-			if (Math.hypot(this.x - blob.x, this.y - blob.y) <= this.vision + this.r + blob.r) {
-				let dx = blob.x - this.x;
-				let dy = blob.y - this.y;
-				let angle = MyMath.safe_atan(dx, dy);
-				
-				if (dy > 0) {
-					if (dx > 0) {
-						this.d = angle;
-					} else {
-						// case includes dx == 0
-						this.d = 90 - angle;
-					}
-				} else {
-					if (dx > 0) {
-						this.d = 360 + angle;					
-					} else {
-						// case includes dx == 0
-						this.d = 180 + angle;
-					}
-				}
-				
+			if (this.can_see(blob)) {
+				this.d = this.angle_to(blob);
+				// console.log(this.d);
 			} else {
 				let p = 0;
 				/* 
@@ -129,7 +141,8 @@ window.onload = () => {
 	}
 
 
-	let dot = new Agent(250, 50, 20, 90, [0, 100, 100], 2);
+	// let dot = new Agent(450, 22, 20, Math.random() * 90, [0, 100, 100], 2);
+	let dot = new Agent(450, 22, 20, 250, [0, 100, 100], 2);
 	let blob = new Food(250, 250);
 
 	function draw() {
