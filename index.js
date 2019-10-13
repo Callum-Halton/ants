@@ -65,6 +65,8 @@ window.onload = () => {
 		}
 
 		// Ideally, this would be a private method
+		// I also know that you started working on a similar method called
+		// aim_at, which would set the direction of this object. I like that too.
 		angle_to(target) {
 			/*
 			Remember that x increases left-to-right, but y increases
