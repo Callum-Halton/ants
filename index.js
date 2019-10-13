@@ -68,10 +68,11 @@ window.onload = () => {
 		// I also know that you started working on a similar method called
 		// aim_at, which would set the direction of this object. I like that too.
 		angle_to(target) {
-			/*
-			Remember that x increases left-to-right, but y increases
-			top-to-bottom. So angle increases clockwise.
-			*/
+			// Remember that x increases left-to-right, but y increases
+			// top-to-bottom. So angle increases clockwise.
+			// Since it's so hard to think about angles going clockwize, it might
+			// make sense to operate in an x,y space where y increases from
+			// bottom to top, and then flip y during the rendering step.
 			let dx = target.x - this.x; // x-component of vector pointing at target
 			let dy = target.y - this.y; // y-component of vector pointing at target
 			let angle = MyMath.atan(dy/dx);
