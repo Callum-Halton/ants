@@ -38,14 +38,14 @@ window.onload = () => {
 	}
 
 	class Agent {
-		constructor(x, y, r, d, c, s) {
-			this.x = x;
-			this.y = y;
-			this.r = r;
-			this.d = d;
-			this.c = c;
-			this.cRender = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
-			this.s = s;
+		constructor(pos_x, pos_y, radius, direction, color, speed) {
+			this.pos_x = pos_x;
+			this.pos_y = pos_y;
+			this.radius = radius;
+			this.direction = direction;
+			this.color = color;
+			this.cRender = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+			this.speed = speed;
 			this.vision = 100;
 			this.agitated = 0.01
 			this.full = false;
@@ -53,18 +53,20 @@ window.onload = () => {
 
 		brighten(n) {
 			for (var i = 0; i < 3; i++) {
-				this.c[i] += n;
+				this.color[i] += n;
 			}
-			this.cRender = `rgb(${this.c[0]}, ${this.c[1]}, ${this.c[2]})`;
+			this.cRender =
+			    `rgb(${this.color[0]}, ${this.color[1]}, ${this.color[2]})`;
 		}
 
 		move(step) {
-			this.x += step * MyMath.cos(this.d);
-			this.y += step * MyMath.sin(this.d);
+			this.pos_x += step * MyMath.cos(this.direction);
+			this.pos_y += step * MyMath.sin(this.direction);
 		}
 
 		can_see(target) {
-			if (Math.hypot(this.x - target.x, this.y - target.y) <= (this.vision + this.r + target.r)) {
+			if (Math.hypot(this.pos_x - target.x, this.pos_y - target.y) <=
+			    (this.vision + this.radius + target.r)) {
 				return true;
 			} else {
 				return false;
@@ -74,11 +76,11 @@ window.onload = () => {
 		// Ideally, this would be a private method
 		angle_to(target) {
 			/*
-			Remember that x increases left-to-right, but y increases
-			top-to-bottom. So angle increases clockwise.
+			Remember that the x-axis increases left-to-right, but the y-axis
+			increases top-to-bottom. So angle increases clockwise.
 			*/
-			let dx = target.x - this.x; // x-component of vector pointing at target
-			let dy = target.y - this.y; // y-component of vector pointing at target
+			let dx = target.x - this.pos_x; // x-component of vector pointing at target
+			let dy = target.y - this.pos_y; // y-component of vector pointing at target
 			let angle = MyMath.atan(dy/dx);
 
 			if (dx == 0) {
@@ -111,8 +113,9 @@ window.onload = () => {
 		}
 
 		reached(target) {
-			let threshold = this.s / 2;
-			if (Math.hypot(this.x - target.x, this.y - target.y) <= threshold) {
+			let threshold = this.speed / 2;
+			if (Math.hypot(this.pos_x - target.x, this.pos_y - target.y) <=
+			    threshold) {
 				return true;
 			} else {
 				return false;
@@ -121,27 +124,27 @@ window.onload = () => {
 
 		update() {
 
-			this.move(this.s);
+			this.move(this.speed);
 
 			if (this.can_see(blob) && !this.full) {
 				if (this.reached(blob)) {
 					this.full = true;
 					this.brighten(50);
-					console.log('a');
+					console.log('Grabbed some food');
 				} else {
-					this.d = this.angle_to(blob);
+					this.direction = this.angle_to(blob);
 				}
 			} else {
 				if (Math.random() < this.agitated) {
-					this.d = Math.random() * 360;
+					this.direction = Math.random() * 360;
 				}
 			}
 
-			if (this.x > WIDTH - this.r || this.x < this.r) {
-				this.d = 180 - this.d;
+			if (this.pos_x > WIDTH - this.radius || this.pos_x < this.radius) {
+				this.direction = 180 - this.direction;
 			}
-			if (this.y > HEIGHT - this.r || this.y < this.r) {
-				this.d = -this.d;
+			if (this.pos_y > HEIGHT - this.radius || this.pos_y < this.radius) {
+				this.direction = -this.direction;
 			}
 		}
 
@@ -149,12 +152,13 @@ window.onload = () => {
 			this.update();
 			ctx.fillStyle = this.cRender;
 			ctx.beginPath();
-			ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+			ctx.arc(this.pos_x, this.pos_y, this.radius, 0, Math.PI * 2);
 			ctx.fill();
 
 			ctx.strokeStyle = this.cRender;
 			ctx.beginPath();
-			ctx.arc(this.x, this.y, this.r + this.vision, 0, Math.PI * 2);
+			ctx.arc(this.pos_x, this.pos_y, this.radius + this.vision, 0,
+			        Math.PI * 2);
 			ctx.stroke();
 		}
 	}
