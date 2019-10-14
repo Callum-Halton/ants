@@ -19,7 +19,6 @@ window.onload = () => {
 		static atan(ratio) {
 			return Math.atan(ratio) * 360 / (2 * Math.PI);
 		}
-
 	}
 
 	class Food {
@@ -44,11 +43,19 @@ window.onload = () => {
 			this.y = y;
 			this.r = r;
 			this.d = d;
-			this.c = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+			this.c = c;
+			this.cRender = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
 			this.s = s;
 			this.vision = 100;
 			this.agitated = 0.01
-			this.focused = false;
+			this.full = false;
+		}
+
+		brighten(n) {
+			for (var i = 0; i < 3; i++) {
+				this.c[i] += n;
+			}
+			this.cRender = `rgb(${this.c[0]}, ${this.c[1]}, ${this.c[2]})`;
 		}
 
 		move(step) {
@@ -65,14 +72,11 @@ window.onload = () => {
 		}
 
 		// Ideally, this would be a private method
-		// I also know that you started working on a similar method called
-		// aim_at, which would set the direction of this object. I like that too.
 		angle_to(target) {
-			// Remember that x increases left-to-right, but y increases
-			// top-to-bottom. So angle increases clockwise.
-			// Since it's so hard to think about angles going clockwize, it might
-			// make sense to operate in an x,y space where y increases from
-			// bottom to top, and then flip y during the rendering step.
+			/*
+			Remember that x increases left-to-right, but y increases
+			top-to-bottom. So angle increases clockwise.
+			*/
 			let dx = target.x - this.x; // x-component of vector pointing at target
 			let dy = target.y - this.y; // y-component of vector pointing at target
 			let angle = MyMath.atan(dy/dx);
@@ -107,28 +111,30 @@ window.onload = () => {
 		}
 
 		reached(target) {
-			let threshold = this.s * 1.5;
+			let threshold = this.s / 2;
 			if (Math.hypot(this.x - target.x, this.y - target.y) <= threshold) {
 				return true;
+			} else {
+				return false;
 			}
-			return false;
 		}
 
 		update() {
 
-			if (!this.reached(blob)) {
-				this.move(this.s);
-			}
+			this.move(this.s);
 
-			if (this.can_see(blob)) {
-				this.d = this.angle_to(blob);
-				// console.log(this.d);
+			if (this.can_see(blob) && !this.full) {
+				if (this.reached(blob)) {
+					this.full = true;
+					this.brighten(50);
+					console.log('a');
+				} else {
+					this.d = this.angle_to(blob);
+				}
 			} else {
-				let p = 0;
-				/* 
 				if (Math.random() < this.agitated) {
 					this.d = Math.random() * 360;
-				}*/
+				}
 			}
 
 			if (this.x > WIDTH - this.r || this.x < this.r) {
@@ -141,12 +147,12 @@ window.onload = () => {
 
 		render() {
 			this.update();
-			ctx.fillStyle = this.c;
+			ctx.fillStyle = this.cRender;
 			ctx.beginPath();
 			ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
 			ctx.fill();
 
-			ctx.strokeStyle = this.c;
+			ctx.strokeStyle = this.cRender;
 			ctx.beginPath();
 			ctx.arc(this.x, this.y, this.r + this.vision, 0, Math.PI * 2);
 			ctx.stroke();
@@ -154,25 +160,15 @@ window.onload = () => {
 	}
 
 
-	// let dot = new Agent(450, 22, 20, Math.random() * 90, [0, 100, 100], 2);
-	let dot1 = new Agent(50, 50, 20, 40, [0, 100, 100], 2);
-	let dot2 = new Agent(450, 50, 20, 120, [100, 0, 100], 2);
-	let dot3 = new Agent(450, 450, 20, 35, [100, 100, 0], 2);
-	let dot4 = new Agent(50, 450, 20, 360-20, [0, 0, 0], 2);
-	let dot5 = new Agent(250, 50, 20, 90, [50, 100, 150], 2);
-	let dot6 = new Agent(250, 450, 20, 270, [255, 100, 150], 2);
+	//let dot = new Agent(450, 22, 20, Math.random() * 90, [0, 100, 100], 2);
+	let dot = new Agent((Math.random() * 400 + 50), (Math.random() * 400 + 50), 20, 0, [0, 100, 100], 3);
 	let blob = new Food(250, 250);
 
 	function draw() {
 		ctx.fillStyle = 'white';
 		ctx.fillRect(0, 0, WIDTH, HEIGHT);
 		blob.render();
-		dot1.render();
-		dot2.render();
-		dot3.render();
-		dot4.render();
-		dot5.render();
-		dot6.render();
+		dot.render();
 		window.requestAnimationFrame(draw);
 	}
 	draw();
