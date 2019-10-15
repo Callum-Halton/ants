@@ -1,7 +1,7 @@
 
 window.onload = () => {
-	const WIDTH = 500;//window.innerWidth;
-	const HEIGHT = 500;//window.innerHeight;
+	const WIDTH = 500; //window.innerWidth;
+	const HEIGHT = 500; //window.innerHeight;
 	const canvas = document.getElementById('canva');
 	canvas.width = WIDTH;
 	canvas.height = HEIGHT;
@@ -38,18 +38,26 @@ window.onload = () => {
 	}
 
 	class Agent {
+
+
+
 		constructor(pos_x, pos_y, radius, direction, color, speed) {
 			this.pos_x = pos_x;
 			this.pos_y = pos_y;
 			this.radius = radius;
 			this.direction = direction;
 			this.color = color;
-			this.cRender = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+			this.cRender = `rgb(${this.color[0]}, ${this.color[1]}, ${this.color[2]})`;
+			//this.updateRenderColour()
 			this.speed = speed;
 			this.vision = 100;
 			this.agitated = 0.01
 			this.full = false;
 		}
+
+		/*updateRenderColour() {
+			this.cRender = `rgb(${this.color[0]}, ${this.color[1]}, ${this.color[2]})`;
+		}*/
 
 		brighten(n) {
 			for (var i = 0; i < 3; i++) {
