@@ -122,9 +122,28 @@ window.onload = () => {
 			}
 		}
 
-		update() {
+		change_direction() {
+			/*
+			Currently, this method is very primitive at the moment. Below is a
+			pseudo-code plan, or vision, for it:
 
-			this.move(this.speed);
+			if can see resource and not full then
+				turn towards resource
+			else if can smell marker then
+				find vector of maximum marker gradient
+				if full
+					turn down gradient
+				else
+					turn up gradient
+			else if can can see that we're headed towards a barrier
+				turn to reduce chance of reaching a barrier
+			else
+				change direction probabilistically based on time since last
+				  change plus other factors.
+
+			To make behavior more natural, it might make sense to change
+			direction by no more than a fixed amount on each step.
+			*/
 
 			if (this.can_see(blob) && !this.full) {
 				if (this.reached(blob)) {
@@ -140,12 +159,52 @@ window.onload = () => {
 				}
 			}
 
-			if (this.pos_x > WIDTH - this.radius || this.pos_x < this.radius) {
-				this.direction = 180 - this.direction;
+			/*
+			Note that the following bounce mechanism can get caught in a high
+			frequency oscillation at the edges of the screen. This is because
+			when the incident angle is very small, it's possible that changing
+			direction does not move the agent, in one step, far enough from the
+			wall such that it's outside of the bounce region. So then it bounces
+			back at the wall again. If we intended to keep using this bounce
+			mechanism, which I believe we don't, then we could add some temporal
+			hysteresis to cause the bounce check to be suppressed for a given
+			number of cycles after a bounce occurs.
+
+			The following mod operation is not absolutely necessary, if
+			negative angles are allowed, but it we decide that angles are
+			to always be in the range [0..360), then the mod is necessary.
+			*/
+			if (this.pos_x > (WIDTH - this.radius) ||
+			    this.pos_x < this.radius) {
+				this.direction = (180 - this.direction) % 360;
 			}
-			if (this.pos_y > HEIGHT - this.radius || this.pos_y < this.radius) {
-				this.direction = -this.direction;
+			if (this.pos_y > (HEIGHT - this.radius) ||
+			    this.pos_y < this.radius) {
+				this.direction = -this.direction % 360;
 			}
+		}
+
+		drop_marker() {
+			/*
+			Periodically drop a marker object at the current location based on
+			the size of the resource seen and how long ago it was seen
+			(resource_memory). So when a resource is located, the agent's
+			resource_memory jumps up to reflect the resource size, and then that
+			memory decays over time. The agent drops a marker with an intensity
+			proportional to its current resource_memory. If there is already a
+			marker object very near to the current location, then that can be
+			re-used by increasing its marker intensity by the agent's
+			resource_memory.
+
+			The marker intensity stored in all the marker objects also
+			gradually decays over time.
+			*/
+		}
+
+		update() {
+			this.change_direction()
+			this.move(this.speed);
+			this.drop_marker();
 		}
 
 		render() {
