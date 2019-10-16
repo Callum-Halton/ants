@@ -75,10 +75,10 @@ window.onload = () => {
 
 		// Constructs a terrain of size width and height, consisting of square
 		// cells which are of size cell_size on a side.
-		constructor(width, height, home, cell_size) {
+		constructor(width, height, home_location, cell_size) {
 			this.width = width;
 			this.height = height;
-			this.home = home;
+			this.home_location = home_location;
 			this.cell_size = cell_size;
 			this.width_in_cells = Math.ceil(this.width/this.cell_size);
 			this.height_in_cells = Math.ceil(this.height/this.cell_size);
