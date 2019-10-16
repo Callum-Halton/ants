@@ -37,11 +37,155 @@ window.onload = () => {
 		}
 	}
 
+	class Point {
+		constructor(x, y) {
+			this.x = x;
+			this.y = y;
+		}
+	}
+
+	class Line {
+		constructor(point_a, point_b) {
+			this.point_a = point_a;
+			this.point_b = point_b;
+		}
+	}
+
+	class Cell {
+		constructor() {
+			this.barrier = false;
+			this.resource = 0;
+			this.resource_marker = 0;
+			this.home_marker = 0;
+		}
+	}
+
+	class Terrain {
+		/*
+		If we store the pheromone markers using independent objects then we
+		would need to have each agent compare its location with every marker
+		object on every step. This would quickly cause the program to grind to
+		a halt because it requires n^2 computation complexity.
+
+		A solution is to have this terrain object that stores the information
+		that the agents interact with. It can store the information, such as the
+		locations of barriers, resources, and markers, in a spatially localized
+		way, which enables the agents to efficiently interact with the terrain.
+		*/
+
+		// Constructs a terrain of size width and height, consisting of square
+		// cells which are of size cell_size on a side.
+		constructor(width, height, home, cell_size) {
+			this.width = width;
+			this.height = height;
+			this.home = home;
+			this.cell_size = cell_size;
+			this.width_in_cells = Math.ceil(this.width/this.cell_size);
+			this.height_in_cells = Math.ceil(this.height/this.cell_size);
+			// console.log(this.height_in_cells);
+			this.grid = new Array(this.height_in_cells)
+			var row;
+			for (row=0; row < this.height_in_cells; row++) {
+				this.grid[row] = new Array(this.width_in_cells);
+				var col;
+				for (col=0; col < this.width_in_cells; col++) {
+					this.grid[row][col] = new Cell();
+				}
+			}
+		}
+
+		// Add a barrier the occupies all the cells that line passes through
+		add_barrier(line) {
+		}
+
+		// Adds the specific amount of resource to the cell that the location
+		// falls into. Returns the amount of resource that was added.
+		add_resource(location, amount) {
+		}
+
+		// Remove up to the target_amount of resource from the cell that
+		// location falls into. Once the cell is empty of resource, no more can
+		// be removed. Returns the amount of resource removed.
+		remove_resource(location, target_amount) {
+		}
+
+		// Drops the specified amount of resource marker in the cell that
+		// location falls into.
+		add_resource_maker(location, amount) {
+		}
+
+		// Drops the specified amount of home marker in the cell that location
+		// falls into.
+		add_home_marker(location, amount) {
+		}
+
+		// Returns angle in degrees to resource within range; null if no
+		// resource in range.
+		visible_resource_direction(location, range) {
+		}
+
+		// Returns angle in degrees of steepest upward slope of resource marker
+		// gradient in range. Returns null if the terrain is flat.
+		local_resource_marker_gradient(location, range) {
+		}
+
+		// Returns angle in degrees of steepest upward slope of home marger
+		// gradient in range. Returns null if the terrain is flat.
+		local_home_marker_gradient(location, range) {
+		}
+
+		// Returns "left", "straight", or "right" depending on whether there is
+		// a barrier within range in the direction of travel and whether turning
+		// left or right (a little) will increase the freedom of movement.
+		least_blocked_turn(location, direction, range) {
+		}
+
+		spawn_agent_at_home() {
+		}
+
+		spawn_colony() {
+		}
+
+		decay_markers() {
+		}
+
+		update(){
+			this.decay_markers();
+		}
+
+		render_cell_border(location) {
+			ctx.strokeStyle = "#F0F0F0";
+			ctx.beginPath();
+			let end_x = location.x + this.cell_size;
+			let end_y = location.y + this.cell_size;
+			ctx.rect(location.x, location.y, end_x, end_y);
+			ctx.stroke();
+		}
+
+		render() {
+			this.update();
+			var y = 0;
+			for (let row = 0; row < this.height_in_cells; row++) {
+				var x = 0;
+				for (let col = 0; col < this.width_in_cells; col++) {
+					let location = new Point(x, y);
+					let cell = this.grid[row][col];
+					this.render_cell_border(location);
+					x = x + this.cell_size;
+				}
+				y = y + this.cell_size;
+			}
+		}
+	}
+
 	class Agent {
-
-
-
-		constructor(pos_x, pos_y, radius, direction, color, speed) {
+		// TODO: Change pos_x / pos_y to be location of type Point
+		// Also, radius, color, direction, and speed can be fixed properties
+		// of the Agent class, rather then set via the constructor.
+		constructor(terrain, pos_x, pos_y, radius, direction, color, speed) {
+			// The agent can interact with the terrain via the following object
+			// reference.
+			this.terrain = terrain;
 			this.pos_x = pos_x;
 			this.pos_y = pos_y;
 			this.radius = radius;
@@ -132,25 +276,36 @@ window.onload = () => {
 
 		change_direction() {
 			/*
-			Currently, this method is very primitive at the moment. Below is a
-			pseudo-code plan, or vision, for it:
+			Currently, this method is very primitive. Below is a pseudo-code
+			plan, or vision, for it:
 
-			if can see resource and not full then
-				turn towards resource
-			else if can smell marker then
-				find vector of maximum marker gradient
-				if full
-					turn down gradient
-				else
+			if not full
+				if can see resource then
+					turn towards resource
+				else if there is a resource marker gradient then
 					turn up gradient
-			else if can can see that we're headed towards a barrier
-				turn to reduce chance of reaching a barrier
-			else
-				change direction probabilistically based on time since last
-				  change plus other factors.
+				else if headed toward a barrier then
+					avoid barrier
+				else
+					change direction probabilistically based on time since last
+					change plus other factors.
+			if full
+				if can see home then
+					turn towards home
+				else if there is a home marker gradient then
+					turn up gradient
+				else if headed toward a barrier then
+					avoid barrier
+				else
+					change direction probabilistically based on time since last
+					change plus other factors.
 
 			To make behavior more natural, it might make sense to change
 			direction by no more than a fixed amount on each step.
+
+			It may be interesting to see how well the system works without the
+			agents even being able to see resources or home, but get steered
+			only by the markers.
 			*/
 
 			if (this.can_see(blob) && !this.full) {
@@ -194,18 +349,14 @@ window.onload = () => {
 
 		drop_marker() {
 			/*
-			Periodically drop a marker object at the current location based on
+			Periodically drop some marker at the current location based on
 			the size of the resource seen and how long ago it was seen
 			(resource_memory). So when a resource is located, the agent's
 			resource_memory jumps up to reflect the resource size, and then that
 			memory decays over time. The agent drops a marker with an intensity
-			proportional to its current resource_memory. If there is already a
-			marker object very near to the current location, then that can be
-			re-used by increasing its marker intensity by the agent's
-			resource_memory.
+			proportional to its current resource_memory.
 
-			The marker intensity stored in all the marker objects also
-			gradually decays over time.
+			Also drop home_marker in a similar way.
 			*/
 		}
 
@@ -230,14 +381,21 @@ window.onload = () => {
 		}
 	}
 
-
-	//let dot = new Agent(450, 22, 20, Math.random() * 90, [0, 100, 100], 2);
-	let dot = new Agent((Math.random() * 400 + 50), (Math.random() * 400 + 50), 20, 0, [0, 100, 100], 3);
+	let home_location = new Point(25, 25);
+	let grid_size = 10;
+	let terrain = new Terrain(WIDTH, HEIGHT, home_location, grid_size);
+	let start_x = (Math.random() * 400 + 50);
+	let start_y = (Math.random() * 400 + 50);
+	let radius = 20; let direction = 0; let color = [0, 100, 100];
+	let speed = 3;
+	let dot = new Agent(terrain, start_x, start_y, radius, direction, color,
+	                    speed);
 	let blob = new Food(250, 250);
 
 	function draw() {
 		ctx.fillStyle = 'white';
 		ctx.fillRect(0, 0, WIDTH, HEIGHT);
+		terrain.render();
 		blob.render();
 		dot.render();
 		window.requestAnimationFrame(draw);
