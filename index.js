@@ -154,7 +154,7 @@ window.onload = () => {
 		}
 
 		render_cell_border(location) {
-			ctx.strokeStyle = "#F0F0F0";
+			ctx.strokeStyle = "#F8F8F8";
 			ctx.beginPath();
 			let end_x = location.x + this.cell_size;
 			let end_y = location.y + this.cell_size;
