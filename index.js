@@ -1,7 +1,7 @@
 
 window.onload = () => {
-	const WIDTH = 1000; //window.innerWidth;
-	const HEIGHT = 1000; //window.innerHeight;
+	const WIDTH = 500; //window.innerWidth;
+	const HEIGHT = 500; //window.innerHeight;
 	const canvas = document.getElementById('canva');
 	canvas.width = WIDTH;
 	canvas.height = HEIGHT;
@@ -115,64 +115,64 @@ window.onload = () => {
 		}
 
 		// Add a barrier the occupies all the cells that line passes through
-		add_barrier(line) {
+		addBarrier(line) {
 		}
 
 		// Adds the specific amount of resource to the cell that the location
 		// falls into. Returns the amount of resource that was added.
-		add_resource(location, amount) {
+		addResource(location, amount) {
 		}
 
 		// Remove up to the target_amount of resource from the cell that
 		// location falls into. Once the cell is empty of resource, no more can
 		// be removed. Returns the amount of resource removed.
-		remove_resource(location, target_amount) {
+		removeResource(location, target_amount) {
 		}
 
 		// Drops the specified amount of resource marker in the cell that
 		// location falls into.
-		add_resource_maker(location, amount) {
+		addResourceMarker(location, amount) {
 			let cellLoc = this.pointToCellLoc(location);
 			this.grid[cellLoc.row][cellLoc.col] = 1;
 		}
 
 		// Drops the specified amount of home marker in the cell that location
 		// falls into.
-		add_home_marker(location, amount) {
+		addHomeMarker(location, amount) {
 		}
 
 		// Returns angle in degrees to resource within range; null if no
 		// resource in range.
-		visible_resource_direction(location, range) {
+		visibleResourceDirection(location, range) {
 		}
 
 		// Returns angle in degrees of steepest upward slope of resource marker
 		// gradient in range. Returns null if the terrain is flat.
-		local_resource_marker_gradient(location, range) {
+		localResourceMarkerGradient(location, range) {
 		}
 
 		// Returns angle in degrees of steepest upward slope of home marger
 		// gradient in range. Returns null if the terrain is flat.
-		local_home_marker_gradient(location, range) {
+		localHomeMarkerGradient(location, range) {
 		}
 
 		// Returns "left", "straight", or "right" depending on whether there is
 		// a barrier within range in the direction of travel and whether turning
 		// left or right (a little) will increase the freedom of movement.
-		least_blocked_turn(location, direction, range) {
+		leastBlockedTurn(location, direction, range) {
 		}
 
-		spawn_agent_at_home() {
+		spawnAgentAtHome() {
 		}
 
-		spawn_colony() {
+		spawnColony() {
 		}
 
-		decay_markers() {
+		decayMarkers() {
 		}
 
 		update(){
-			this.decay_markers();
+			this.decayMarkers();
 		}
 
 		render() {
@@ -192,8 +192,7 @@ window.onload = () => {
 	}
 
 	class Agent {
-		// TODO: Change pos_x / pos_y to be location of type Point
-		// Also, radius, color, direction, and speed can be fixed properties
+		// TODO: radius, color, direction, and speed can be fixed properties
 		// of the Agent class, rather then set via the constructor.
 		constructor(terrain, loc, radius, direction, color, speed) {
 			// The agent can interact with the terrain via the following object
@@ -203,14 +202,15 @@ window.onload = () => {
 			this.radius = radius;
 			this.direction = direction;
 			this.color = color;
-			this.cRender = this.color_string(this.color);
+			this.cRender = this.colorString(this.color);
 			this.speed = speed;
 			this.vision = 100;
 			this.agitated = 0.01;
 			this.full = false;
 		}
 
-		color_string(color) {
+		// Love this refactor, Callum.
+		colorString(color) {
 			return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
 		}
 
@@ -218,7 +218,7 @@ window.onload = () => {
 			for (var i = 0; i < 3; i++) {
 				this.color[i] += n;
 			}
-			this.cRender = this.color_string(color);
+			this.cRender = this.colorString(color);
 		}
 
 		move(step) {
@@ -226,7 +226,7 @@ window.onload = () => {
 			this.loc.y += step * MyMath.sin(this.direction);
 		}
 
-		can_see(target) {
+		canSee(target) {
 			if (Math.hypot(this.loc.x - target.x, this.loc.y - target.y) <=
 			    (this.vision + this.radius + target.r)) {
 				return true;
@@ -236,7 +236,7 @@ window.onload = () => {
 		}
 
 		// Ideally, this would be a private method
-		angle_to(target) {
+		angleTo(target) {
 			/*
 			Remember that the x-axis increases left-to-right, but the y-axis
 			increases top-to-bottom. So angle increases clockwise.
@@ -284,7 +284,7 @@ window.onload = () => {
 			}
 		}
 
-		change_direction() {
+		changeDirection() {
 			/*
 			Currently, this method is very primitive. Below is a pseudo-code
 			plan, or vision, for it:
@@ -318,13 +318,13 @@ window.onload = () => {
 			only by the markers.
 			*/
 
-			if (this.can_see(blob) && !this.full) {
+			if (this.canSee(blob) && !this.full) {
 				if (this.reached(blob)) {
 					this.full = true;
 					this.brighten(50);
 					console.log('Grabbed some food');
 				} else {
-					this.direction = this.angle_to(blob);
+					this.direction = this.angleTo(blob);
 				}
 			} else {
 				if (Math.random() < this.agitated) {
@@ -357,7 +357,7 @@ window.onload = () => {
 			}
 		}
 
-		drop_marker() {
+		dropMarker() {
 			/*
 			Periodically drop some marker at the current location based on
 			the size of the resource seen and how long ago it was seen
@@ -371,9 +371,9 @@ window.onload = () => {
 		}
 
 		update() {
-			this.change_direction()
+			this.changeDirection()
 			this.move(this.speed);
-			this.drop_marker();
+			this.dropMarker();
 		}
 
 		render() {
