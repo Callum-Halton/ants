@@ -154,6 +154,24 @@ window.onload = () => {
     // Returns angle in degrees of steepest upward slope of home marger
     // gradient in range. Returns null if the terrain is flat.
     localHomeMarkerGradient(location, range) {
+      /*
+        Thinking through a possible approach to this algorithm ...
+
+        a) Find center-of-gravity (COG) of local cells
+        b) Return the angle of vector from location to COG
+
+        For (a):
+          1. Find all the cells that are fully inside the circle with center at
+             location and with radius equal to range.
+             See https://stackoverflow.com/a/24170973/1841553
+          2. Calculate the horizontal COG for each row of cells inside the
+             circle.
+          3. Calculate the 2D COG for all the cells in the circle by finding
+             the vertical COG of the horizontal COGs.
+
+        Handle cases where circle goes off the edge of the grid.
+      */
+
     }
 
     // Returns "left", "straight", or "right" depending on whether there is
