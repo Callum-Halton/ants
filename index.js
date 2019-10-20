@@ -149,11 +149,6 @@ window.onload = () => {
     // Returns angle in degrees of steepest upward slope of resource marker
     // gradient in range. Returns null if the terrain is flat.
     localResourceMarkerGradient(location, range) {
-    }
-
-    // Returns angle in degrees of steepest upward slope of home marger
-    // gradient in range. Returns null if the terrain is flat.
-    localHomeMarkerGradient(location, range) {
       /*
         Thinking through a possible approach to this algorithm ...
 
@@ -171,7 +166,11 @@ window.onload = () => {
 
         Handle cases where circle goes off the edge of the grid.
       */
+    }
 
+    // Returns angle in degrees of steepest upward slope of home marger
+    // gradient in range. Returns null if the terrain is flat.
+    localHomeMarkerGradient(location, range) {
     }
 
     // Returns "left", "straight", or "right" depending on whether there is
