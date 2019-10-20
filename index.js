@@ -1,420 +1,420 @@
 
 window.onload = () => {
-	const WIDTH = 500; //window.innerWidth;
-	const HEIGHT = 500; //window.innerHeight;
-	const canvas = document.getElementById('canva');
-	canvas.width = WIDTH;
-	canvas.height = HEIGHT;
-	const ctx = canvas.getContext('2d');
+  const WIDTH = 500; //window.innerWidth;
+  const HEIGHT = 500; //window.innerHeight;
+  const canvas = document.getElementById('canva');
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  const ctx = canvas.getContext('2d');
 
-	class MyMath {
-		static sin(angle) {
-			return Math.sin(angle * 2 * Math.PI / 360);
-		}
-		
-		static cos(angle) {
-			return Math.cos(angle * 2 * Math.PI / 360);
-		}
-		
-		static atan(ratio) {
-			return Math.atan(ratio) * 360 / (2 * Math.PI);
-		}
-	}
+  class MyMath {
+    static sin(angle) {
+      return Math.sin(angle * 2 * Math.PI / 360);
+    }
 
-	class Food {
-		constructor(x, y) {
-			this.x = x;
-			this.y = y;
-			this.r = 20;
-			this.c = `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random()* 255})`;
-		}
+    static cos(angle) {
+      return Math.cos(angle * 2 * Math.PI / 360);
+    }
 
-		render() {
-			ctx.fillStyle = this.c;
-			ctx.beginPath();
-			ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-			ctx.fill();
-		}
-	}
+    static atan(ratio) {
+      return Math.atan(ratio) * 360 / (2 * Math.PI);
+    }
+  }
 
-	class Point {
-		constructor(x, y) {
-			this.x = x;
-			this.y = y;
-		}
-	}
+  class Food {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.r = 20;
+      this.c = `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random()* 255})`;
+    }
 
-	class CellLoc {
-		constructor(row, col) {
-			this.row = row;
-			this.col = col;
-		}
-	}
+    render() {
+      ctx.fillStyle = this.c;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
 
-	class Line {
-		constructor(point_a, point_b) {
-			this.point_a = point_a;
-			this.point_b = point_b;
-		}
-	}
+  class Point {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+    }
+  }
 
-	class Cell {
-		constructor() {
-			this.barrier = false;
-			this.resource = 0;
-			this.resource_marker = 0;
-			this.home_marker = 0;
-		}
+  class CellLoc {
+    constructor(row, col) {
+      this.row = row;
+      this.col = col;
+    }
+  }
 
-		render(location, cell_size) {
-			ctx.strokeStyle = "#F8F8F8";
-			ctx.beginPath();
-			let end_x = location.x + cell_size;
-			let end_y = location.y + cell_size;
-			ctx.rect(location.x, location.y, end_x, end_y);
-			ctx.stroke();
-		}
-	}
+  class Line {
+    constructor(point_a, point_b) {
+      this.point_a = point_a;
+      this.point_b = point_b;
+    }
+  }
 
-	class Terrain {
-		/*
-		If we store the pheromone markers using independent objects then we
-		would need to have each agent compare its location with every marker
-		object on every step. This would quickly cause the program to grind to
-		a halt because it requires n^2 computation complexity.
+  class Cell {
+    constructor() {
+      this.barrier = false;
+      this.resource = 0;
+      this.resource_marker = 0;
+      this.home_marker = 0;
+    }
 
-		A solution is to have this terrain object that stores the information
-		that the agents interact with. It can store the information, such as the
-		locations of barriers, resources, and markers, in a spatially localized
-		way, which enables the agents to efficiently interact with the terrain.
-		*/
+    render(location, cell_size) {
+      ctx.strokeStyle = "#F8F8F8";
+      ctx.beginPath();
+      let end_x = location.x + cell_size;
+      let end_y = location.y + cell_size;
+      ctx.rect(location.x, location.y, end_x, end_y);
+      ctx.stroke();
+    }
+  }
 
-		// Constructs a terrain of size width and height, consisting of square
-		// cells which are of size cell_size on a side.
-		constructor(width, height, home_location, cell_size) {
-			this.width = width;
-			this.height = height;
-			this.home_location = home_location;
-			this.cell_size = cell_size;
-			this.width_in_cells = Math.ceil(this.width/this.cell_size);
-			this.height_in_cells = Math.ceil(this.height/this.cell_size);
-			// console.log(this.height_in_cells);
-			this.grid = new Array(this.height_in_cells);
-			for (let row = 0; row < this.height_in_cells; row++) {
-				this.grid[row] = new Array(this.width_in_cells);
-				for (let col = 0; col < this.width_in_cells; col++) {
-					this.grid[row][col] = new Cell();
-				}
-			}
-		}
+  class Terrain {
+    /*
+    If we store the pheromone markers using independent objects then we
+    would need to have each agent compare its location with every marker
+    object on every step. This would quickly cause the program to grind to
+    a halt because it requires n^2 computation complexity.
 
-		pointToCellLoc(location) {
-			let col = Math.floor(location.x / this.cell_size);
-			let row = Math.floor(location.y / this.cell_size);
-			return new CellLoc(row, col);
-		}
+    A solution is to have this terrain object that stores the information
+    that the agents interact with. It can store the information, such as the
+    locations of barriers, resources, and markers, in a spatially localized
+    way, which enables the agents to efficiently interact with the terrain.
+    */
 
-		// Add a barrier the occupies all the cells that line passes through
-		addBarrier(line) {
-		}
+    // Constructs a terrain of size width and height, consisting of square
+    // cells which are of size cell_size on a side.
+    constructor(width, height, home_location, cell_size) {
+      this.width = width;
+      this.height = height;
+      this.home_location = home_location;
+      this.cell_size = cell_size;
+      this.width_in_cells = Math.ceil(this.width/this.cell_size);
+      this.height_in_cells = Math.ceil(this.height/this.cell_size);
+      // console.log(this.height_in_cells);
+      this.grid = new Array(this.height_in_cells);
+      for (let row = 0; row < this.height_in_cells; row++) {
+        this.grid[row] = new Array(this.width_in_cells);
+        for (let col = 0; col < this.width_in_cells; col++) {
+          this.grid[row][col] = new Cell();
+        }
+      }
+    }
 
-		// Adds the specific amount of resource to the cell that the location
-		// falls into. Returns the amount of resource that was added.
-		addResource(location, amount) {
-		}
+    pointToCellLoc(location) {
+      let col = Math.floor(location.x / this.cell_size);
+      let row = Math.floor(location.y / this.cell_size);
+      return new CellLoc(row, col);
+    }
 
-		// Remove up to the target_amount of resource from the cell that
-		// location falls into. Once the cell is empty of resource, no more can
-		// be removed. Returns the amount of resource removed.
-		removeResource(location, target_amount) {
-		}
+    // Add a barrier the occupies all the cells that line passes through
+    addBarrier(line) {
+    }
 
-		// Drops the specified amount of resource marker in the cell that
-		// location falls into.
-		addResourceMarker(location, amount) {
-			let cellLoc = this.pointToCellLoc(location);
-			this.grid[cellLoc.row][cellLoc.col] = 1;
-		}
+    // Adds the specific amount of resource to the cell that the location
+    // falls into. Returns the amount of resource that was added.
+    addResource(location, amount) {
+    }
 
-		// Drops the specified amount of home marker in the cell that location
-		// falls into.
-		addHomeMarker(location, amount) {
-		}
+    // Remove up to the target_amount of resource from the cell that
+    // location falls into. Once the cell is empty of resource, no more can
+    // be removed. Returns the amount of resource removed.
+    removeResource(location, target_amount) {
+    }
 
-		// Returns angle in degrees to resource within range; null if no
-		// resource in range.
-		visibleResourceDirection(location, range) {
-		}
+    // Drops the specified amount of resource marker in the cell that
+    // location falls into.
+    addResourceMarker(location, amount) {
+      let cellLoc = this.pointToCellLoc(location);
+      this.grid[cellLoc.row][cellLoc.col] = 1;
+    }
 
-		// Returns angle in degrees of steepest upward slope of resource marker
-		// gradient in range. Returns null if the terrain is flat.
-		localResourceMarkerGradient(location, range) {
-		}
+    // Drops the specified amount of home marker in the cell that location
+    // falls into.
+    addHomeMarker(location, amount) {
+    }
 
-		// Returns angle in degrees of steepest upward slope of home marger
-		// gradient in range. Returns null if the terrain is flat.
-		localHomeMarkerGradient(location, range) {
-		}
+    // Returns angle in degrees to resource within range; null if no
+    // resource in range.
+    visibleResourceDirection(location, range) {
+    }
 
-		// Returns "left", "straight", or "right" depending on whether there is
-		// a barrier within range in the direction of travel and whether turning
-		// left or right (a little) will increase the freedom of movement.
-		leastBlockedTurn(location, direction, range) {
-		}
+    // Returns angle in degrees of steepest upward slope of resource marker
+    // gradient in range. Returns null if the terrain is flat.
+    localResourceMarkerGradient(location, range) {
+    }
 
-		spawnAgentAtHome() {
-		}
+    // Returns angle in degrees of steepest upward slope of home marger
+    // gradient in range. Returns null if the terrain is flat.
+    localHomeMarkerGradient(location, range) {
+    }
 
-		spawnColony() {
-		}
+    // Returns "left", "straight", or "right" depending on whether there is
+    // a barrier within range in the direction of travel and whether turning
+    // left or right (a little) will increase the freedom of movement.
+    leastBlockedTurn(location, direction, range) {
+    }
 
-		decayMarkers() {
-		}
+    spawnAgentAtHome() {
+    }
 
-		update(){
-			this.decayMarkers();
-		}
+    spawnColony() {
+    }
 
-		render() {
-			this.update();
-			var y = 0;
-			for (let row = 0; row < this.height_in_cells; row++) {
-				var x = 0;
-				for (let col = 0; col < this.width_in_cells; col++) {
-					let location = new Point(x, y);
-					let cell = this.grid[row][col];
-					cell.render(location, this.cell_size);
-					x = x + this.cell_size;
-				}
-				y = y + this.cell_size;
-			}
-		}
-	}
+    decayMarkers() {
+    }
 
-	class Agent {
-		// TODO: radius, color, direction, and speed can be fixed properties
-		// of the Agent class, rather then set via the constructor.
-		constructor(terrain, loc, radius, direction, color, speed) {
-			// The agent can interact with the terrain via the following object
-			// reference.
-			this.terrain = terrain;
-			this.loc = loc;
-			this.radius = radius;
-			this.direction = direction;
-			this.color = color;
-			this.cRender = this.colorString(this.color);
-			this.speed = speed;
-			this.vision = 100;
-			this.agitated = 0.01;
-			this.full = false;
-		}
+    update(){
+      this.decayMarkers();
+    }
 
-		// Love this refactor, Callum.
-		colorString(color) {
-			return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-		}
+    render() {
+      this.update();
+      var y = 0;
+      for (let row = 0; row < this.height_in_cells; row++) {
+        var x = 0;
+        for (let col = 0; col < this.width_in_cells; col++) {
+          let location = new Point(x, y);
+          let cell = this.grid[row][col];
+          cell.render(location, this.cell_size);
+          x = x + this.cell_size;
+        }
+        y = y + this.cell_size;
+      }
+    }
+  }
 
-		brighten(n) {
-			for (var i = 0; i < 3; i++) {
-				this.color[i] += n;
-			}
-			this.cRender = this.colorString(color);
-		}
+  class Agent {
+    // TODO: radius, color, direction, and speed can be fixed properties
+    // of the Agent class, rather then set via the constructor.
+    constructor(terrain, loc, radius, direction, color, speed) {
+      // The agent can interact with the terrain via the following object
+      // reference.
+      this.terrain = terrain;
+      this.loc = loc;
+      this.radius = radius;
+      this.direction = direction;
+      this.color = color;
+      this.cRender = this.colorString(this.color);
+      this.speed = speed;
+      this.vision = 100;
+      this.agitated = 0.01;
+      this.full = false;
+    }
 
-		move(step) {
-			this.loc.x += step * MyMath.cos(this.direction);
-			this.loc.y += step * MyMath.sin(this.direction);
-		}
+    // Love this refactor, Callum.
+    colorString(color) {
+      return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+    }
 
-		canSee(target) {
-			if (Math.hypot(this.loc.x - target.x, this.loc.y - target.y) <=
-			    (this.vision + this.radius + target.r)) {
-				return true;
-			} else {
-				return false;
-			}
-		}
+    brighten(n) {
+      for (var i = 0; i < 3; i++) {
+        this.color[i] += n;
+      }
+      this.cRender = this.colorString(color);
+    }
 
-		// Ideally, this would be a private method
-		angleTo(target) {
-			/*
-			Remember that the x-axis increases left-to-right, but the y-axis
-			increases top-to-bottom. So angle increases clockwise.
-			*/
-			let dx = target.x - this.loc.x; // x-component of vector pointing at target
-			let dy = target.y - this.loc.y; // y-component of vector pointing at target
-			let angle = MyMath.atan(dy/dx);
+    move(step) {
+      this.loc.x += step * MyMath.cos(this.direction);
+      this.loc.y += step * MyMath.sin(this.direction);
+    }
 
-			if (dx == 0) {
-				// Handle case where dy/dx is undefined.
-				if (dy > 0) {
-					// Target is below
-					return 90;
-				} else {
-					// Target is above
-					return 270;
-				}
-			} else if (dy > 0) {
-				if (dx > 0) {
-					// Bottom-right quadrant
-					angle = angle;
-				} else {
-					// Bottom-left quadrant
-					angle = 180 + angle;
-				}
-			} else {
-				if (dx > 0) {
-					// Top-right quadrant
-					angle = 360 + angle;
-				} else {
-					// top-left quadrant
-					angle = 180 + angle;
-				}
-			}
-			return angle;
-		}
+    canSee(target) {
+      if (Math.hypot(this.loc.x - target.x, this.loc.y - target.y) <=
+          (this.vision + this.radius + target.r)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
 
-		reached(target) {
-			let threshold = this.speed / 2;
-			if (Math.hypot(this.loc.x - target.x, this.loc.y - target.y) <=
-			    threshold) {
-				return true;
-			} else {
-				return false;
-			}
-		}
+    // Ideally, this would be a private method
+    angleTo(target) {
+      /*
+      Remember that the x-axis increases left-to-right, but the y-axis
+      increases top-to-bottom. So angle increases clockwise.
+      */
+      let dx = target.x - this.loc.x; // x-component of vector pointing at target
+      let dy = target.y - this.loc.y; // y-component of vector pointing at target
+      let angle = MyMath.atan(dy/dx);
 
-		changeDirection() {
-			/*
-			Currently, this method is very primitive. Below is a pseudo-code
-			plan, or vision, for it:
+      if (dx == 0) {
+        // Handle case where dy/dx is undefined.
+        if (dy > 0) {
+          // Target is below
+          return 90;
+        } else {
+          // Target is above
+          return 270;
+        }
+      } else if (dy > 0) {
+        if (dx > 0) {
+          // Bottom-right quadrant
+          angle = angle;
+        } else {
+          // Bottom-left quadrant
+          angle = 180 + angle;
+        }
+      } else {
+        if (dx > 0) {
+          // Top-right quadrant
+          angle = 360 + angle;
+        } else {
+          // top-left quadrant
+          angle = 180 + angle;
+        }
+      }
+      return angle;
+    }
 
-			if not full
-				if can see resource then
-					turn towards resource
-				else if there is a resource marker gradient then
-					turn up gradient
-				else if headed toward a barrier then
-					avoid barrier
-				else
-					change direction probabilistically based on time since last
-					change plus other factors.
-			if full
-				if can see home then
-					turn towards home
-				else if there is a home marker gradient then
-					turn up gradient
-				else if headed toward a barrier then
-					avoid barrier
-				else
-					change direction probabilistically based on time since last
-					change plus other factors.
+    reached(target) {
+      let threshold = this.speed / 2;
+      if (Math.hypot(this.loc.x - target.x, this.loc.y - target.y) <=
+          threshold) {
+        return true;
+      } else {
+        return false;
+      }
+    }
 
-			To make behavior more natural, it might make sense to change
-			direction by no more than a fixed amount on each step.
+    changeDirection() {
+      /*
+      Currently, this method is very primitive. Below is a pseudo-code
+      plan, or vision, for it:
 
-			It may be interesting to see how well the system works without the
-			agents even being able to see resources or home, but get steered
-			only by the markers.
-			*/
+      if not full
+        if can see resource then
+          turn towards resource
+        else if there is a resource marker gradient then
+          turn up gradient
+        else if headed toward a barrier then
+          avoid barrier
+        else
+          change direction probabilistically based on time since last
+          change plus other factors.
+      if full
+        if can see home then
+          turn towards home
+        else if there is a home marker gradient then
+          turn up gradient
+        else if headed toward a barrier then
+          avoid barrier
+        else
+          change direction probabilistically based on time since last
+          change plus other factors.
 
-			if (this.canSee(blob) && !this.full) {
-				if (this.reached(blob)) {
-					this.full = true;
-					this.brighten(50);
-					console.log('Grabbed some food');
-				} else {
-					this.direction = this.angleTo(blob);
-				}
-			} else {
-				if (Math.random() < this.agitated) {
-					this.direction = Math.random() * 360;
-				}
-			}
+      To make behavior more natural, it might make sense to change
+      direction by no more than a fixed amount on each step.
 
-			/*
-			Note that the following bounce mechanism can get caught in a high
-			frequency oscillation at the edges of the screen. This is because
-			when the incident angle is very small, it's possible that changing
-			direction does not move the agent, in one step, far enough from the
-			wall such that it's outside of the bounce region. So then it bounces
-			back at the wall again. If we intended to keep using this bounce
-			mechanism, which I believe we don't, then we could add some temporal
-			hysteresis to cause the bounce check to be suppressed for a given
-			number of cycles after a bounce occurs.
+      It may be interesting to see how well the system works without the
+      agents even being able to see resources or home, but get steered
+      only by the markers.
+      */
 
-			The following mod operation is not absolutely necessary, if
-			negative angles are allowed, but it we decide that angles are
-			to always be in the range [0..360), then the mod is necessary.
-			*/
-			if (this.loc.x > (WIDTH - this.radius) ||
-			    this.loc.x < this.radius) {
-				this.direction = (180 - this.direction) % 360;
-			}
-			if (this.loc.y > (HEIGHT - this.radius) ||
-			    this.loc.y < this.radius) {
-				this.direction = -this.direction % 360;
-			}
-		}
+      if (this.canSee(blob) && !this.full) {
+        if (this.reached(blob)) {
+          this.full = true;
+          this.brighten(50);
+          console.log('Grabbed some food');
+        } else {
+          this.direction = this.angleTo(blob);
+        }
+      } else {
+        if (Math.random() < this.agitated) {
+          this.direction = Math.random() * 360;
+        }
+      }
 
-		dropMarker() {
-			/*
-			Periodically drop some marker at the current location based on
-			the size of the resource seen and how long ago it was seen
-			(resource_memory). So when a resource is located, the agent's
-			resource_memory jumps up to reflect the resource size, and then that
-			memory decays over time. The agent drops a marker with an intensity
-			proportional to its current resource_memory.
+      /*
+      Note that the following bounce mechanism can get caught in a high
+      frequency oscillation at the edges of the screen. This is because
+      when the incident angle is very small, it's possible that changing
+      direction does not move the agent, in one step, far enough from the
+      wall such that it's outside of the bounce region. So then it bounces
+      back at the wall again. If we intended to keep using this bounce
+      mechanism, which I believe we don't, then we could add some temporal
+      hysteresis to cause the bounce check to be suppressed for a given
+      number of cycles after a bounce occurs.
 
-			Also drop home_marker in a similar way.
-			*/
-		}
+      The following mod operation is not absolutely necessary, if
+      negative angles are allowed, but it we decide that angles are
+      to always be in the range [0..360), then the mod is necessary.
+      */
+      if (this.loc.x > (WIDTH - this.radius) ||
+          this.loc.x < this.radius) {
+        this.direction = (180 - this.direction) % 360;
+      }
+      if (this.loc.y > (HEIGHT - this.radius) ||
+          this.loc.y < this.radius) {
+        this.direction = -this.direction % 360;
+      }
+    }
 
-		update() {
-			this.changeDirection()
-			this.move(this.speed);
-			this.dropMarker();
-		}
+    dropMarker() {
+      /*
+      Periodically drop some marker at the current location based on
+      the size of the resource seen and how long ago it was seen
+      (resource_memory). So when a resource is located, the agent's
+      resource_memory jumps up to reflect the resource size, and then that
+      memory decays over time. The agent drops a marker with an intensity
+      proportional to its current resource_memory.
 
-		render() {
-			this.update();
-			ctx.fillStyle = this.cRender;
-			ctx.beginPath();
-			ctx.arc(this.loc.x, this.loc.y, this.radius, 0, Math.PI * 2);
-			ctx.fill();
+      Also drop home_marker in a similar way.
+      */
+    }
 
-			ctx.save();
-			ctx.translate(this.loc.x, this.loc.y);
-			ctx.rotate((this.direction - 45) * 2 * Math.PI / 360);
-			ctx.fillRect(0, 0, this.radius, this.radius);
-			ctx.restore();
+    update() {
+      this.changeDirection()
+      this.move(this.speed);
+      this.dropMarker();
+    }
 
-			ctx.strokeStyle = this.cRender;
-			ctx.beginPath();
-			ctx.arc(this.loc.x, this.loc.y, this.radius + this.vision, 0,
-			        Math.PI * 2);
-			ctx.stroke();
-		}
-	}
+    render() {
+      this.update();
+      ctx.fillStyle = this.cRender;
+      ctx.beginPath();
+      ctx.arc(this.loc.x, this.loc.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
 
-	const home_location = new Point(25, 25);
-	const grid_size = 10;
-	const terrain = new Terrain(WIDTH, HEIGHT, home_location, grid_size);
-	const location = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
-	const radius = 20; let direction = 0; let color = [0, 100, 100];
-	const speed = 3;
-	var dot = new Agent(terrain, location, radius, direction, color,
-	                    speed);
-	let blob = new Food(250, 250);
+      ctx.save();
+      ctx.translate(this.loc.x, this.loc.y);
+      ctx.rotate((this.direction - 45) * 2 * Math.PI / 360);
+      ctx.fillRect(0, 0, this.radius, this.radius);
+      ctx.restore();
 
-	function draw() {
-		ctx.fillStyle = 'white';
-		ctx.fillRect(0, 0, WIDTH, HEIGHT);
-		terrain.render();
-		blob.render();
-		dot.render();
-		window.requestAnimationFrame(draw);
-	}
-	draw();
+      ctx.strokeStyle = this.cRender;
+      ctx.beginPath();
+      ctx.arc(this.loc.x, this.loc.y, this.radius + this.vision, 0,
+              Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  const home_location = new Point(25, 25);
+  const grid_size = 10;
+  const terrain = new Terrain(WIDTH, HEIGHT, home_location, grid_size);
+  const location = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
+  const radius = 20; let direction = 0; let color = [0, 100, 100];
+  const speed = 3;
+  var dot = new Agent(terrain, location, radius, direction, color,
+                      speed);
+  let blob = new Food(250, 250);
+
+  function draw() {
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    terrain.render();
+    blob.render();
+    dot.render();
+    window.requestAnimationFrame(draw);
+  }
+  draw();
 
 }
