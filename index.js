@@ -161,8 +161,12 @@ window.onload = () => {
              See https://stackoverflow.com/a/24170973/1841553
           2. Calculate the horizontal COG for each row of cells inside the
              circle.
-          3. Calculate the 2D COG for all the cells in the circle by finding
-             the vertical COG of the horizontal COGs.
+          3. Calculate the horizontal COG for all the cells in the circle by
+             finding the COG of the row COGs calculated in step (2).
+          4. Calculate the vertical COG for each column of cells inside the
+             cicle.
+          5. Calculate the vertical COG for all the cells in the cirlce by
+             finding the COG of the column COGs calculated in step (4).
 
         Handle cases where circle goes off the edge of the grid.
       */
