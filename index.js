@@ -1,7 +1,7 @@
 
 window.onload = () => {
-	const WIDTH = 500; //window.innerWidth;
-	const HEIGHT = 500; //window.innerHeight;
+	const WIDTH = 1000; //window.innerWidth;
+	const HEIGHT = 1000; //window.innerHeight;
 	const canvas = document.getElementById('canva');
 	canvas.width = WIDTH;
 	canvas.height = HEIGHT;
@@ -44,6 +44,13 @@ window.onload = () => {
 		}
 	}
 
+	class CellLoc {
+		constructor(row, col) {
+			this.row = row;
+			this.col = col;
+		}
+	}
+
 	class Line {
 		constructor(point_a, point_b) {
 			this.point_a = point_a;
@@ -57,6 +64,15 @@ window.onload = () => {
 			this.resource = 0;
 			this.resource_marker = 0;
 			this.home_marker = 0;
+		}
+
+		render(location, cell_size) {
+			ctx.strokeStyle = "#F8F8F8";
+			ctx.beginPath();
+			let end_x = location.x + cell_size;
+			let end_y = location.y + cell_size;
+			ctx.rect(location.x, location.y, end_x, end_y);
+			ctx.stroke();
 		}
 	}
 
@@ -83,15 +99,19 @@ window.onload = () => {
 			this.width_in_cells = Math.ceil(this.width/this.cell_size);
 			this.height_in_cells = Math.ceil(this.height/this.cell_size);
 			// console.log(this.height_in_cells);
-			this.grid = new Array(this.height_in_cells)
-			var row;
-			for (row=0; row < this.height_in_cells; row++) {
+			this.grid = new Array(this.height_in_cells);
+			for (let row = 0; row < this.height_in_cells; row++) {
 				this.grid[row] = new Array(this.width_in_cells);
-				var col;
-				for (col=0; col < this.width_in_cells; col++) {
+				for (let col = 0; col < this.width_in_cells; col++) {
 					this.grid[row][col] = new Cell();
 				}
 			}
+		}
+
+		pointToCellLoc(location) {
+			let col = Math.floor(location.x / this.cell_size);
+			let row = Math.floor(location.y / this.cell_size);
+			return new CellLoc(row, col);
 		}
 
 		// Add a barrier the occupies all the cells that line passes through
@@ -112,6 +132,8 @@ window.onload = () => {
 		// Drops the specified amount of resource marker in the cell that
 		// location falls into.
 		add_resource_maker(location, amount) {
+			let cellLoc = this.pointToCellLoc(location);
+			this.grid[cellLoc.row][cellLoc.col] = 1;
 		}
 
 		// Drops the specified amount of home marker in the cell that location
@@ -153,15 +175,6 @@ window.onload = () => {
 			this.decay_markers();
 		}
 
-		render_cell_border(location) {
-			ctx.strokeStyle = "#F8F8F8";
-			ctx.beginPath();
-			let end_x = location.x + this.cell_size;
-			let end_y = location.y + this.cell_size;
-			ctx.rect(location.x, location.y, end_x, end_y);
-			ctx.stroke();
-		}
-
 		render() {
 			this.update();
 			var y = 0;
@@ -170,7 +183,7 @@ window.onload = () => {
 				for (let col = 0; col < this.width_in_cells; col++) {
 					let location = new Point(x, y);
 					let cell = this.grid[row][col];
-					this.render_cell_border(location);
+					cell.render(location, this.cell_size);
 					x = x + this.cell_size;
 				}
 				y = y + this.cell_size;
@@ -182,42 +195,39 @@ window.onload = () => {
 		// TODO: Change pos_x / pos_y to be location of type Point
 		// Also, radius, color, direction, and speed can be fixed properties
 		// of the Agent class, rather then set via the constructor.
-		constructor(terrain, pos_x, pos_y, radius, direction, color, speed) {
+		constructor(terrain, loc, radius, direction, color, speed) {
 			// The agent can interact with the terrain via the following object
 			// reference.
 			this.terrain = terrain;
-			this.pos_x = pos_x;
-			this.pos_y = pos_y;
+			this.loc = loc;
 			this.radius = radius;
 			this.direction = direction;
 			this.color = color;
-			this.cRender = `rgb(${this.color[0]}, ${this.color[1]}, ${this.color[2]})`;
-			//this.updateRenderColour()
+			this.cRender = this.color_string(this.color);
 			this.speed = speed;
 			this.vision = 100;
-			this.agitated = 0.01
+			this.agitated = 0.01;
 			this.full = false;
 		}
 
-		/*updateRenderColour() {
-			this.cRender = `rgb(${this.color[0]}, ${this.color[1]}, ${this.color[2]})`;
-		}*/
+		color_string(color) {
+			return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+		}
 
 		brighten(n) {
 			for (var i = 0; i < 3; i++) {
 				this.color[i] += n;
 			}
-			this.cRender =
-			    `rgb(${this.color[0]}, ${this.color[1]}, ${this.color[2]})`;
+			this.cRender = this.color_string(color);
 		}
 
 		move(step) {
-			this.pos_x += step * MyMath.cos(this.direction);
-			this.pos_y += step * MyMath.sin(this.direction);
+			this.loc.x += step * MyMath.cos(this.direction);
+			this.loc.y += step * MyMath.sin(this.direction);
 		}
 
 		can_see(target) {
-			if (Math.hypot(this.pos_x - target.x, this.pos_y - target.y) <=
+			if (Math.hypot(this.loc.x - target.x, this.loc.y - target.y) <=
 			    (this.vision + this.radius + target.r)) {
 				return true;
 			} else {
@@ -231,8 +241,8 @@ window.onload = () => {
 			Remember that the x-axis increases left-to-right, but the y-axis
 			increases top-to-bottom. So angle increases clockwise.
 			*/
-			let dx = target.x - this.pos_x; // x-component of vector pointing at target
-			let dy = target.y - this.pos_y; // y-component of vector pointing at target
+			let dx = target.x - this.loc.x; // x-component of vector pointing at target
+			let dy = target.y - this.loc.y; // y-component of vector pointing at target
 			let angle = MyMath.atan(dy/dx);
 
 			if (dx == 0) {
@@ -266,7 +276,7 @@ window.onload = () => {
 
 		reached(target) {
 			let threshold = this.speed / 2;
-			if (Math.hypot(this.pos_x - target.x, this.pos_y - target.y) <=
+			if (Math.hypot(this.loc.x - target.x, this.loc.y - target.y) <=
 			    threshold) {
 				return true;
 			} else {
@@ -337,12 +347,12 @@ window.onload = () => {
 			negative angles are allowed, but it we decide that angles are
 			to always be in the range [0..360), then the mod is necessary.
 			*/
-			if (this.pos_x > (WIDTH - this.radius) ||
-			    this.pos_x < this.radius) {
+			if (this.loc.x > (WIDTH - this.radius) ||
+			    this.loc.x < this.radius) {
 				this.direction = (180 - this.direction) % 360;
 			}
-			if (this.pos_y > (HEIGHT - this.radius) ||
-			    this.pos_y < this.radius) {
+			if (this.loc.y > (HEIGHT - this.radius) ||
+			    this.loc.y < this.radius) {
 				this.direction = -this.direction % 360;
 			}
 		}
@@ -370,25 +380,30 @@ window.onload = () => {
 			this.update();
 			ctx.fillStyle = this.cRender;
 			ctx.beginPath();
-			ctx.arc(this.pos_x, this.pos_y, this.radius, 0, Math.PI * 2);
+			ctx.arc(this.loc.x, this.loc.y, this.radius, 0, Math.PI * 2);
 			ctx.fill();
+
+			ctx.save();
+			ctx.translate(this.loc.x, this.loc.y);
+			ctx.rotate((this.direction - 45) * 2 * Math.PI / 360);
+			ctx.fillRect(0, 0, this.radius, this.radius);
+			ctx.restore();
 
 			ctx.strokeStyle = this.cRender;
 			ctx.beginPath();
-			ctx.arc(this.pos_x, this.pos_y, this.radius + this.vision, 0,
+			ctx.arc(this.loc.x, this.loc.y, this.radius + this.vision, 0,
 			        Math.PI * 2);
 			ctx.stroke();
 		}
 	}
 
-	let home_location = new Point(25, 25);
-	let grid_size = 10;
-	let terrain = new Terrain(WIDTH, HEIGHT, home_location, grid_size);
-	let start_x = (Math.random() * 400 + 50);
-	let start_y = (Math.random() * 400 + 50);
-	let radius = 20; let direction = 0; let color = [0, 100, 100];
-	let speed = 3;
-	let dot = new Agent(terrain, start_x, start_y, radius, direction, color,
+	const home_location = new Point(25, 25);
+	const grid_size = 10;
+	const terrain = new Terrain(WIDTH, HEIGHT, home_location, grid_size);
+	const location = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
+	const radius = 20; let direction = 0; let color = [0, 100, 100];
+	const speed = 3;
+	var dot = new Agent(terrain, location, radius, direction, color,
 	                    speed);
 	let blob = new Food(250, 250);
 
