@@ -1,3 +1,10 @@
+var keypressed = null;
+function keydown(event) {
+	keypressed = event.key;
+}
+function keyup(event) {
+	keypressed = null;
+}
 
 window.onload = () => {
   const WIDTH = 500; //window.innerWidth;
@@ -21,12 +28,16 @@ window.onload = () => {
     }
   }
 
+  function colorString(color) {
+      return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+  }
+
   class Food {
     constructor(x, y) {
       this.x = x;
       this.y = y;
       this.r = 20;
-      this.c = `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random()* 255})`;
+      this.c = colorString([Math.random() * 255, Math.random() * 255, Math.random() * 255]);
     }
 
     render() {
@@ -66,12 +77,15 @@ window.onload = () => {
       this.home_marker = 0;
     }
 
-    render(location, cell_size) {
+    render(location, cellSize) {
       ctx.strokeStyle = "#F8F8F8";
       ctx.beginPath();
-      let end_x = location.x + cell_size;
-      let end_y = location.y + cell_size;
+      let end_x = location.x + cellSize;
+      let end_y = location.y + cellSize;
+      ctx.fillStyle = colorString([(1 - this.resource_marker) * 255, 255, 255]);
+      ctx.beginPath()
       ctx.rect(location.x, location.y, end_x, end_y);
+      ctx.fill();
       ctx.stroke();
     }
   }
@@ -90,14 +104,14 @@ window.onload = () => {
     */
 
     // Constructs a terrain of size width and height, consisting of square
-    // cells which are of size cell_size on a side.
-    constructor(width, height, home_location, cell_size) {
+    // cells which are of size cellSize on a side.
+    constructor(width, height, home_location, cellSize) {
       this.width = width;
       this.height = height;
       this.home_location = home_location;
-      this.cell_size = cell_size;
-      this.width_in_cells = Math.ceil(this.width/this.cell_size);
-      this.height_in_cells = Math.ceil(this.height/this.cell_size);
+      this.cellSize = cellSize;
+      this.width_in_cells = Math.ceil(this.width/this.cellSize);
+      this.height_in_cells = Math.ceil(this.height/this.cellSize);
       // console.log(this.height_in_cells);
       this.grid = new Array(this.height_in_cells);
       for (let row = 0; row < this.height_in_cells; row++) {
@@ -109,8 +123,8 @@ window.onload = () => {
     }
 
     pointToCellLoc(location) {
-      let col = Math.floor(location.x / this.cell_size);
-      let row = Math.floor(location.y / this.cell_size);
+      let col = Math.floor(location.x / this.cellSize);
+      let row = Math.floor(location.y / this.cellSize);
       return new CellLoc(row, col);
     }
 
@@ -133,7 +147,7 @@ window.onload = () => {
     // location falls into.
     addResourceMarker(location, amount) {
       let cellLoc = this.pointToCellLoc(location);
-      this.grid[cellLoc.row][cellLoc.col] = 1;
+      this.grid[cellLoc.row][cellLoc.col].resource_marker += amount;
     }
 
     // Drops the specified amount of home marker in the cell that location
@@ -146,9 +160,44 @@ window.onload = () => {
     visibleResourceDirection(location, range) {
     }
 
+    cellCircleBounds(radius) {
+      let bounds = [];
+      let cellRad = Math.round(radius / this.cellSize);
+      for (let row = 0; row <= cellRad; row++) {
+        for (let col = 0; col <= cellRad; col++) {
+          if (Math.hypot((this.cellSize * col), (this.cellSize * row)) > radius) {
+            bounds.push(col);
+            break;
+          }
+        }
+        if (bounds.length != row + 1) {
+            bounds.push(cellRad + 1);
+          }
+      }
+      return bounds;
+    }
+
+    operateInGridBounds(location, bounds, f) {
+      let cellLoc = terrain.pointToCellLoc(location);
+      for (let yInvert = 0; yInvert < 2; yInvert++) {
+        for (let xInvert = 0; xInvert < 2; xInvert++) {
+          for (let row = 0; row < bounds.length; row++) {
+            for (let col = 0; col < bounds[row]; col++) {
+              let adjRow = (2 * yInvert - 1) * row + cellLoc.row;
+              let adjCol = (2 * xInvert - 1) * col + cellLoc.col;
+              f(this, adjRow, adjCol);
+            }
+          }
+
+        }
+      }
+    }
+
     // Returns angle in degrees of steepest upward slope of resource marker
     // gradient in range. Returns null if the terrain is flat.
     localResourceMarkerGradient(location, range) {
+      let cellLoc = this.pointToCellLoc(location);
+
       /*
         Thinking through a possible approach to this algorithm ...
 
@@ -204,10 +253,10 @@ window.onload = () => {
         for (let col = 0; col < this.width_in_cells; col++) {
           let location = new Point(x, y);
           let cell = this.grid[row][col];
-          cell.render(location, this.cell_size);
-          x = x + this.cell_size;
+          cell.render(location, this.cellSize);
+          x = x + this.cellSize;
         }
-        y = y + this.cell_size;
+        y = y + this.cellSize;
       }
     }
   }
@@ -223,23 +272,21 @@ window.onload = () => {
       this.radius = radius;
       this.direction = direction;
       this.color = color;
-      this.cRender = this.colorString(this.color);
+      this.cRender = colorString(this.color);
       this.speed = speed;
       this.vision = 100;
+      this.visionBounds = terrain.cellCircleBounds(this.vision);
       this.agitated = 0.01;
+      this.resource_memory = 0;
       this.full = false;
-    }
-
-    // Love this refactor, Callum.
-    colorString(color) {
-      return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+      this.headBack = false;
     }
 
     brighten(n) {
       for (var i = 0; i < 3; i++) {
         this.color[i] += n;
       }
-      this.cRender = this.colorString(color);
+      this.cRender = colorString(color);
     }
 
     move(step) {
@@ -342,6 +389,7 @@ window.onload = () => {
       if (this.canSee(blob) && !this.full) {
         if (this.reached(blob)) {
           this.full = true;
+          this.resource_memory = 1;
           this.brighten(50);
           console.log('Grabbed some food');
         } else {
@@ -379,6 +427,8 @@ window.onload = () => {
     }
 
     dropMarker() {
+      terrain.addResourceMarker(this.loc, this.resource_memory);
+      this.resource_memory *= 0.99;
       /*
       Periodically drop some marker at the current location based on
       the size of the resource seen and how long ago it was seen
@@ -392,9 +442,19 @@ window.onload = () => {
     }
 
     update() {
-      this.changeDirection()
-      this.move(this.speed);
-      this.dropMarker();
+      this.changeDirection();
+      //this.move(this.speed);
+      //this.dropMarker();
+      if (this.headBack) {
+        terrain.operateInGridBounds(this.loc, this.visionBounds,
+          (terrainCtx, adjRow, adjCol) => {
+            if ((adjRow + adjCol) % 2 == 0) {
+              terrainCtx.grid[adjRow][adjCol].resource_marker = 1;
+            } else {
+              terrainCtx.grid[adjRow][adjCol].resource_marker = 0.5;
+            }
+          });
+      }
     }
 
     render() {
@@ -412,7 +472,7 @@ window.onload = () => {
 
       ctx.strokeStyle = this.cRender;
       ctx.beginPath();
-      ctx.arc(this.loc.x, this.loc.y, this.radius + this.vision, 0,
+      ctx.arc(this.loc.x, this.loc.y, this.vision, 0,
               Math.PI * 2);
       ctx.stroke();
     }
@@ -421,8 +481,8 @@ window.onload = () => {
   const home_location = new Point(25, 25);
   const grid_size = 10;
   const terrain = new Terrain(WIDTH, HEIGHT, home_location, grid_size);
-  const location = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
-  const radius = 20; let direction = 0; let color = [0, 100, 100];
+  const location = new Point(205, 205);
+  const radius = 10; let direction = 0; let color = [0, 100, 100];
   const speed = 3;
   var dot = new Agent(terrain, location, radius, direction, color,
                       speed);
@@ -434,6 +494,9 @@ window.onload = () => {
     terrain.render();
     blob.render();
     dot.render();
+    if (keypressed) {
+			dot.headBack = true;
+    }
     window.requestAnimationFrame(draw);
   }
   draw();
