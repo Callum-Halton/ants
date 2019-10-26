@@ -1,15 +1,21 @@
-var keypressed = false;
+var hide_debug = true;
+var freeze = false;
 function keydown(event) {
-	keypressed = true;
+  if (event.key == "a") {
+    hide_debug = false;
+  }
 }
 function keyup(event) {
-	keypressed = false;
+  if (event.key == "a") {
+    hide_debug = true;
+  }
 }
 
 window.onload = () => {
   const WIDTH = 1000; //window.innerWidth;
   const HEIGHT = 1000; //window.innerHeight;
   const GRID_SIZE = 30;
+  const FREEZE = false;
   const canvas = document.getElementById('canva');
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
@@ -91,9 +97,9 @@ window.onload = () => {
       let end_x = location.x + cellSize;
       let end_y = location.y + cellSize;
       if (this.home) {
-        ctx.fillStyle = "#FF0000"
-      } else if (!keypressed && this.debug) {
-        ctx.fillStyle = "#00FF00"
+        ctx.fillStyle = "#FF0000";
+      } else if (!hide_debug && this.debug) {
+        ctx.fillStyle = "#00FF00";
       } else {
         ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, 255]);
       }
@@ -190,18 +196,15 @@ window.onload = () => {
 
     // Instead of just marking the circle, the COG could be calculated here.
     _debugMarkLocalBounds(cellLoc) {
-      for (let yInvert = 0; yInvert < 2; yInvert++) {
-        for (let xInvert = 0; xInvert < 2; xInvert++) {
-          for (let row = 0; row < this._localBounds.length; row++) {
-            for (let col = 0; col < this._localBounds[row]; col++) {
-              let adjRow = (2 * yInvert - 1) * row + cellLoc.row;
-              let adjCol = (2 * xInvert - 1) * col + cellLoc.col;
-              if (adjRow >= 0 && adjCol >= 0 &&
-                  adjRow < this._heightInCells &&
-                  adjCol < this._widthInCells) {
-                this._grid[adjRow][adjCol].debug = true;
-              }
-            }
+      for (let row = -this._localBounds.length; row < this._localBounds.length; row++) {
+        let endCol = this._localBounds[Math.abs(row)];
+        for (let col = -endCol + 1; col < endCol; col++) {
+          let adjRow = row + cellLoc.row;
+          let adjCol = col + cellLoc.col;
+          if (adjRow >= 0 && adjCol >= 0 &&
+              adjRow < this._heightInCells &&
+              adjCol < this._widthInCells) {
+            this._grid[adjRow][adjCol].debug = true;
           }
         }
       }
@@ -248,14 +251,20 @@ window.onload = () => {
     }
 
     spawnAgentAtHome(seed) {
-      this._agents.push(new Agent(this, this._homeLocation, seed))
+      this._agents.push(new Agent(this, this._homeLocation))
     }
 
     // The following does not work properly at the moment because the PRNG for
     // each agent operates the same, so all the agents operate identically. Need
     // a seedable PRNG.
     spawnColony() {
-      for (let i=0; i<20; i++) {
+      let numberOfAgents;
+      if (FREEZE) {
+        numberOfAgents = 1;
+      } else {
+        numberOfAgents = 100;
+      }
+      for (let i=0; i<numberOfAgents; i++) {
         this.spawnAgentAtHome(i);
       }
     }
@@ -269,6 +278,7 @@ window.onload = () => {
 
     draw() {
       this._update();
+
       var y = 0;
       for (let row = 0; row < this._heightInCells; row++) {
         var x = 0;
@@ -280,6 +290,21 @@ window.onload = () => {
         }
         y = y + this._cellSize;
       }
+
+      ctx.strokeStyle = "#F8F8F8";
+      for (let lineX = this._cellSize; lineX < this._width; lineX += this._cellSize) {
+        ctx.beginPath();
+        ctx.moveTo(lineX, 0);
+        ctx.lineTo(lineX, this._height);
+        ctx.stroke();
+      }
+      for (let lineY = this._cellSize; lineY < this._height; lineY += this._cellSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, lineY);
+        ctx.lineTo(this._width, lineY);
+        ctx.stroke();
+      }
+
       for (let i=0; i < this._agents.length; i++) {
         this._agents[i].draw()
       }
@@ -292,7 +317,7 @@ window.onload = () => {
       // reference.
       this._terrain = terrain;
       this._loc = new Point(loc.x, loc.y); // Callum, I need to talk with you about this line
-      this._radius = 10;
+      this._radius = 6;
       this._direction = Math.random() * 360;
       this._color = [0, 100, 100];
       this._cRender = colorString(this._color);
@@ -316,6 +341,13 @@ window.onload = () => {
     _move() {
       this._loc.x += this._speed * MyMath.cos(this._direction);
       this._loc.y += this._speed * MyMath.sin(this._direction);
+      // Callum, I added the following checks because sometimes the agents were
+      // going off the edge of the canvas, leading to indexing out of bounds
+      // in the cell array in terrain.
+      if (this._loc.x < 0) { this._loc.x = 0; }
+      if (this._loc.y < 0) { this._loc.y = 0; }
+      if (this._loc.x >= WIDTH) { this._loc.x = WIDTH-1; }
+      if (this._loc.y >= HEIGHT) { this._loc.y = HEIGHT-1; }
     }
 
     _canSee(target) {
@@ -476,20 +508,10 @@ window.onload = () => {
 
     _update() {
       this._changeDirection();
-      this._move();
-      this._dropMarker();
-      /*
-      if (this.headBack) {
-        terrain.operateInGridBounds(this.loc, this.visionBounds,
-          (terrainCtx, adjRow, adjCol) => {
-            if ((adjRow + adjCol) % 2 == 0) {
-              terrainCtx.grid[adjRow][adjCol].resource_marker = 1;
-            } else {
-              terrainCtx.grid[adjRow][adjCol].resource_marker = 0.5;
-            }
-          });
+      if (!FREEZE) {
+        this._move();
+        this._dropMarker();
       }
-      */
     }
 
     draw() {
@@ -505,16 +527,22 @@ window.onload = () => {
       ctx.fillRect(0, 0, this._radius, this._radius);
       ctx.restore();
 
-      ctx.strokeStyle = this._cRender;
-      ctx.beginPath();
-      ctx.arc(this._loc.x, this._loc.y, this._vision, 0,
-              Math.PI * 2);
-      ctx.stroke();
+      if (FREEZE) {
+        ctx.strokeStyle = this._cRender;
+        ctx.beginPath();
+        ctx.arc(this._loc.x, this._loc.y, this._vision, 0,
+                Math.PI * 2);
+        ctx.stroke();
+      }
     }
   }
 
-  // const homeLocation = new Point(205, 205);
-  const homeLocation = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
+  let homeLocation;
+  if (FREEZE) {
+    homeLocation = new Point(500, 500);
+  } else {
+    homeLocation = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
+  }
   const terrain = new Terrain(WIDTH, HEIGHT, homeLocation, GRID_SIZE);
   // terrain.spawnAgentAtHome();
   terrain.spawnColony();
@@ -526,13 +554,7 @@ window.onload = () => {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
     terrain.draw();
-    resource.draw(); // This will soon be removed
-    // agent.draw();
-    /*
-    if (keypressed) {
-			dot.headBack = true;
-    }
-    */
+    resource.draw();
     window.requestAnimationFrame(draw);
   }
   draw();
