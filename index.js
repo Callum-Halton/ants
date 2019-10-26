@@ -9,8 +9,9 @@ function keyup(event) {
 */
 
 window.onload = () => {
-  const WIDTH = 500; //window.innerWidth;
-  const HEIGHT = 500; //window.innerHeight;
+  const WIDTH = 1000; //window.innerWidth;
+  const HEIGHT = 1000; //window.innerHeight;
+  const GRID_SIZE = 30;
   const canvas = document.getElementById('canva');
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
@@ -65,6 +66,12 @@ window.onload = () => {
     }
   }
 
+  function pointToCellLoc(location, cellSize) {
+    let col = Math.floor(location.x / cellSize);
+    let row = Math.floor(location.y / cellSize);
+    return new CellLoc(row, col);
+  }
+
   class Line {
     constructor(point_a, point_b) {
       this.point_a = point_a;
@@ -76,6 +83,7 @@ window.onload = () => {
     constructor() {
       this.barrier = false;
       this.resource = 0;
+      this.home = false;
       this.resourceMarker = 0;
       this.homeMarker = 0;
     }
@@ -83,7 +91,11 @@ window.onload = () => {
     render(location, cellSize) {
       let end_x = location.x + cellSize;
       let end_y = location.y + cellSize;
-      ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, 255]);
+      if (this.home) {
+        ctx.fillStyle = "#FF0000"
+      } else {
+        ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, 255]);
+      }
       ctx.fillRect(location.x, location.y, end_x, end_y);
       // Rendering is too slow with both stroke and fill on all the cells
       // ctx.strokeStyle = "#F8F8F8";
@@ -120,13 +132,9 @@ window.onload = () => {
           this._grid[row][col] = new Cell();
         }
       }
+      let homeCellLoc = pointToCellLoc(this._homeLocation, this._cellSize);
+      this._grid[homeCellLoc.row][homeCellLoc.col].home = true;
       this._agents = [];
-    }
-
-    _pointToCellLoc(location) {
-      let col = Math.floor(location.x / this._cellSize);
-      let row = Math.floor(location.y / this._cellSize);
-      return new CellLoc(row, col);
     }
 
     // Add a barrier the occupies all the cells that line passes through
@@ -147,7 +155,7 @@ window.onload = () => {
     // Drops the specified amount of resource marker in the cell that
     // location falls into.
     addResourceMarker(location, amount) {
-      let cellLoc = this._pointToCellLoc(location);
+      let cellLoc = pointToCellLoc(location, this._cellSize);
       this._grid[cellLoc.row][cellLoc.col].resourceMarker += amount;
     }
 
@@ -199,7 +207,7 @@ window.onload = () => {
     // Returns angle in degrees of steepest upward slope of resource marker
     // gradient in range. Returns null if the terrain is flat.
     localResourceMarkerGradient(location, range) {
-      let cellLoc = this._pointToCellLoc(location);
+      let cellLoc = pointToCellLoc(location, this._cellSize);
 
       /*
         Thinking through a possible approach to this algorithm ...
@@ -243,7 +251,7 @@ window.onload = () => {
     // each agent operates the same, so all the agents operate identically. Need
     // a seedable PRNG.
     spawnColony() {
-      for (let i=0; i<3; i++) {
+      for (let i=0; i<20; i++) {
         this.spawnAgentAtHome(i);
       }
     }
@@ -500,8 +508,7 @@ window.onload = () => {
 
   // const homeLocation = new Point(205, 205);
   const homeLocation = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
-  const gridSize = 10;
-  const terrain = new Terrain(WIDTH, HEIGHT, homeLocation, gridSize);
+  const terrain = new Terrain(WIDTH, HEIGHT, homeLocation, GRID_SIZE);
   // terrain.spawnAgentAtHome();
   terrain.spawnColony();
   // var agent = new Agent(terrain, homeLocation);
