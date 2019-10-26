@@ -76,14 +76,14 @@ window.onload = () => {
     constructor() {
       this.barrier = false;
       this.resource = 0;
-      this.resource_marker = 0;
-      this.home_marker = 0;
+      this.resourceMarker = 0;
+      this.homeMarker = 0;
     }
 
     render(location, cellSize) {
       let end_x = location.x + cellSize;
       let end_y = location.y + cellSize;
-      ctx.fillStyle = colorString([(1 - this.resource_marker) * 255, 255, 255]);
+      ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, 255]);
       ctx.fillRect(location.x, location.y, end_x, end_y);
       // Rendering is too slow with both stroke and fill on all the cells
       // ctx.strokeStyle = "#F8F8F8";
@@ -111,13 +111,12 @@ window.onload = () => {
       this._height = height;
       this._homeLocation = homeLocation;
       this._cellSize = cellSize;
-      this._width_in_cells = Math.ceil(this._width/this._cellSize);
-      this._height_in_cells = Math.ceil(this._height/this._cellSize);
-      // console.log(this.height_in_cells);
-      this._grid = new Array(this._height_in_cells);
-      for (let row = 0; row < this._height_in_cells; row++) {
-        this._grid[row] = new Array(this._width_in_cells);
-        for (let col = 0; col < this._width_in_cells; col++) {
+      this._widthInCells = Math.ceil(this._width/this._cellSize);
+      this._heightInCells = Math.ceil(this._height/this._cellSize);
+      this._grid = new Array(this._heightInCells);
+      for (let row = 0; row < this._heightInCells; row++) {
+        this._grid[row] = new Array(this._widthInCells);
+        for (let col = 0; col < this._widthInCells; col++) {
           this._grid[row][col] = new Cell();
         }
       }
@@ -141,14 +140,14 @@ window.onload = () => {
     // Remove up to the target_amount of resource from the cell that
     // location falls into. Once the cell is empty of resource, no more can
     // be removed. Returns the amount of resource removed.
-    removeResource(location, target_amount) {
+    removeResource(location, targetAmount) {
     }
 
     // Drops the specified amount of resource marker in the cell that
     // location falls into.
     addResourceMarker(location, amount) {
       let cellLoc = this._pointToCellLoc(location);
-      this._grid[cellLoc.row][cellLoc.col].resource_marker += amount;
+      this._grid[cellLoc.row][cellLoc.col].resourceMarker += amount;
     }
 
     // Drops the specified amount of home marker in the cell that location
@@ -251,9 +250,9 @@ window.onload = () => {
     render() {
       this._update();
       var y = 0;
-      for (let row = 0; row < this._height_in_cells; row++) {
+      for (let row = 0; row < this._heightInCells; row++) {
         var x = 0;
-        for (let col = 0; col < this._width_in_cells; col++) {
+        for (let col = 0; col < this._widthInCells; col++) {
           let location = new Point(x, y);
           let cell = this._grid[row][col];
           cell.render(location, this._cellSize);
@@ -278,6 +277,7 @@ window.onload = () => {
       this._cRender = colorString(this._color);
       this._speed = speed;
       this._vision = 100;
+      // Callum, Agent should not need to know anything about terrain cells
       // this.visionBounds = terrain.cellCircleBounds(this.vision);
       this._agitated = 0.01;
       this._resource_memory = 0;
@@ -298,7 +298,6 @@ window.onload = () => {
     }
 
     _canSee(target) {
-      // console.log(targetLocation.x);
       if (Math.hypot(this._loc.x - target.loc.x, this._loc.y - target.loc.y) <=
           (this._vision + this._radius + target.radius)) {
         return true;
