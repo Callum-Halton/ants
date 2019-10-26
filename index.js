@@ -43,7 +43,7 @@ window.onload = () => {
       this._color = colorString([Math.random() * 255, Math.random() * 255, Math.random() * 255]);
     }
 
-    render() {
+    draw() {
       ctx.fillStyle = this._color;
       ctx.beginPath();
       ctx.arc(this.loc.x, this.loc.y, this.radius, 0, Math.PI * 2);
@@ -247,7 +247,7 @@ window.onload = () => {
       this._decayMarkers();
     }
 
-    render() {
+    draw() {
       this._update();
       var y = 0;
       for (let row = 0; row < this._heightInCells; row++) {
@@ -468,7 +468,7 @@ window.onload = () => {
       */
     }
 
-    render() {
+    draw() {
       this._update();
       ctx.fillStyle = this._cRender;
       ctx.beginPath();
@@ -503,9 +503,9 @@ window.onload = () => {
   function draw() {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    terrain.render();
-    resource.render();
-    agent.render();
+    terrain.draw();
+    resource.draw();
+    agent.draw();
     /*
     if (keypressed) {
 			dot.headBack = true;
