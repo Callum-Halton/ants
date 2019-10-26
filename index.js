@@ -87,7 +87,7 @@ window.onload = () => {
       this.debug = false;
     }
 
-    render(location, cellSize) {
+    draw(location, cellSize) {
       let end_x = location.x + cellSize;
       let end_y = location.y + cellSize;
       if (this.home) {
@@ -275,7 +275,7 @@ window.onload = () => {
         for (let col = 0; col < this._widthInCells; col++) {
           let location = new Point(x, y);
           let cell = this._grid[row][col];
-          cell.render(location, this._cellSize);
+          cell.draw(location, this._cellSize);
           x = x + this._cellSize;
         }
         y = y + this._cellSize;
