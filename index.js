@@ -1,12 +1,10 @@
-/*
-var keypressed = null;
+var keypressed = false;
 function keydown(event) {
-	keypressed = event.key;
+	keypressed = true;
 }
 function keyup(event) {
-	keypressed = null;
+	keypressed = false;
 }
-*/
 
 window.onload = () => {
   const WIDTH = 1000; //window.innerWidth;
@@ -86,6 +84,7 @@ window.onload = () => {
       this.home = false;
       this.resourceMarker = 0;
       this.homeMarker = 0;
+      this.debug = false;
     }
 
     render(location, cellSize) {
@@ -93,6 +92,8 @@ window.onload = () => {
       let end_y = location.y + cellSize;
       if (this.home) {
         ctx.fillStyle = "#FF0000"
+      } else if (!keypressed && this.debug) {
+        ctx.fillStyle = "#00FF00"
       } else {
         ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, 255]);
       }
@@ -135,6 +136,24 @@ window.onload = () => {
       let homeCellLoc = pointToCellLoc(this._homeLocation, this._cellSize);
       this._grid[homeCellLoc.row][homeCellLoc.col].home = true;
       this._agents = [];
+      this._localBounds = this._preCalcLocalBounds(this._cellSize * 3);
+    }
+
+    _preCalcLocalBounds(radius) {
+      let bounds = [];
+      let cellRad = Math.round(radius / this._cellSize);
+      for (let row = 0; row <= cellRad; row++) {
+        for (let col = 0; col <= cellRad; col++) {
+          if (Math.hypot((this._cellSize * col), (this._cellSize * row)) > radius) {
+            bounds.push(col);
+            break;
+          }
+        }
+        if (bounds.length != row + 1) {
+            bounds.push(cellRad + 1);
+          }
+      }
+      return bounds;
     }
 
     // Add a barrier the occupies all the cells that line passes through
@@ -169,45 +188,31 @@ window.onload = () => {
     visibleResourceDirection(location, range) {
     }
 
-    /*
-    cellCircleBounds(radius) {
-      let bounds = [];
-      let cellRad = Math.round(radius / this.cellSize);
-      for (let row = 0; row <= cellRad; row++) {
-        for (let col = 0; col <= cellRad; col++) {
-          if (Math.hypot((this.cellSize * col), (this.cellSize * row)) > radius) {
-            bounds.push(col);
-            break;
-          }
-        }
-        if (bounds.length != row + 1) {
-            bounds.push(cellRad + 1);
-          }
-      }
-      return bounds;
-    }
-
-    operateInGridBounds(location, bounds, f) {
-      let cellLoc = terrain.pointToCellLoc(location);
+    // Instead of just marking the circle, the COG and the gradient could be
+    // calculated here.
+    _debugMarkLocalBounds(cellLoc) {
       for (let yInvert = 0; yInvert < 2; yInvert++) {
         for (let xInvert = 0; xInvert < 2; xInvert++) {
-          for (let row = 0; row < bounds.length; row++) {
-            for (let col = 0; col < bounds[row]; col++) {
+          for (let row = 0; row < this._localBounds.length; row++) {
+            for (let col = 0; col < this._localBounds[row]; col++) {
               let adjRow = (2 * yInvert - 1) * row + cellLoc.row;
               let adjCol = (2 * xInvert - 1) * col + cellLoc.col;
-              f(this, adjRow, adjCol);
+              if (adjRow >= 0 && adjCol >= 0 &&
+                  adjRow < this._heightInCells &&
+                  adjCol < this._widthInCells) {
+                this._grid[adjRow][adjCol].debug = true;
+              }
             }
           }
-
         }
       }
     }
-    */
 
     // Returns angle in degrees of steepest upward slope of resource marker
     // gradient in range. Returns null if the terrain is flat.
-    localResourceMarkerGradient(location, range) {
+    localResourceMarkerGradient(location) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
+      this._debugMarkLocalBounds(cellLoc);
 
       /*
         Thinking through a possible approach to this algorithm ...
@@ -411,6 +416,9 @@ window.onload = () => {
       by this agent. Luckily, this is only temporary as we move to using the
       Terrain class to store the resource information.
       */
+
+      // Just calling this here for debug purposes. Not yet acting upon it.
+      this._terrain.localResourceMarkerGradient(this._loc);
 
       if (this._canSee(resource) && !this._full) {
         if (this._reached(resource)) {
