@@ -30,24 +30,6 @@ window.onload = () => {
     }
   }
 
-  // Based on https://gist.github.com/blixt/f17b47c62508be59987b
-  class Random {
-    constructor(seed) {
-      this._seed = seed % 2147483647;
-      if (this._seed <= 0) this._seed += 2147483646;
-    }
-
-    next() {
-      return this._seed = this._seed * 16807 % 2147483647;
-    }
-
-    // Returns a pseudo-random floating point number in range [0, 1).
-    nextFloat() {
-      return (this.next() - 1) / 2147483646;
-    }
-
-  }
-
   function colorString(color) {
       return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
   }
@@ -293,13 +275,13 @@ window.onload = () => {
   }
 
   class Agent {
-    constructor(terrain, loc, seed) {
+    constructor(terrain, loc) {
       // The agent can interact with the terrain via the following object
       // reference.
       this._terrain = terrain;
       this._loc = new Point(loc.x, loc.y); // Callum, I need to talk with you about this line
       this._radius = 10;
-      this._direction = 0;
+      this._direction = Math.random() * 360;
       this._color = [0, 100, 100];
       this._cRender = colorString(this._color);
       this._speed = 3;
@@ -310,7 +292,6 @@ window.onload = () => {
       this._resource_memory = 0;
       this._full = false;
       // this.headBack = false;
-      this._prng = new Random(seed);
     }
 
     _brighten(n) {
@@ -433,8 +414,8 @@ window.onload = () => {
           this._direction = this._angleTo(resource);
         }
       } else {
-        if (this._prng.nextFloat() < this._agitated) {
-          this._direction = this._prng.nextFloat() * 360;
+        if (Math.random() < this._agitated) {
+          this._direction = Math.random() * 360;
         }
       }
 
