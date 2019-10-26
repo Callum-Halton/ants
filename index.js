@@ -188,8 +188,7 @@ window.onload = () => {
     visibleResourceDirection(location, range) {
     }
 
-    // Instead of just marking the circle, the COG and the gradient could be
-    // calculated here.
+    // Instead of just marking the circle, the COG could be calculated here.
     _debugMarkLocalBounds(cellLoc) {
       for (let yInvert = 0; yInvert < 2; yInvert++) {
         for (let xInvert = 0; xInvert < 2; xInvert++) {
