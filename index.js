@@ -1,3 +1,4 @@
+/*
 var keypressed = null;
 function keydown(event) {
 	keypressed = event.key;
@@ -5,6 +6,7 @@ function keydown(event) {
 function keyup(event) {
 	keypressed = null;
 }
+*/
 
 window.onload = () => {
   const WIDTH = 500; //window.innerWidth;
@@ -32,18 +34,19 @@ window.onload = () => {
       return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
   }
 
-  class Food {
-    constructor(x, y) {
-      this.x = x;
-      this.y = y;
-      this.r = 20;
-      this.c = colorString([Math.random() * 255, Math.random() * 255, Math.random() * 255]);
+  // This class is deprecated and will be removed.
+  class Resource {
+    constructor(location) {
+      console.log("Warning: The Resource class has been deprecated and will be removed")
+      this.loc = location
+      this.radius = 20;
+      this._color = colorString([Math.random() * 255, Math.random() * 255, Math.random() * 255]);
     }
 
     render() {
-      ctx.fillStyle = this.c;
+      ctx.fillStyle = this._color;
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.arc(this.loc.x, this.loc.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -78,15 +81,13 @@ window.onload = () => {
     }
 
     render(location, cellSize) {
-      ctx.strokeStyle = "#F8F8F8";
-      ctx.beginPath();
       let end_x = location.x + cellSize;
       let end_y = location.y + cellSize;
       ctx.fillStyle = colorString([(1 - this.resource_marker) * 255, 255, 255]);
-      ctx.beginPath()
-      ctx.rect(location.x, location.y, end_x, end_y);
-      ctx.fill();
-      ctx.stroke();
+      ctx.fillRect(location.x, location.y, end_x, end_y);
+      // Rendering is too slow with both stroke and fill on all the cells
+      // ctx.strokeStyle = "#F8F8F8";
+      // ctx.strokeRect(location.x, location.y, end_x, end_y);
     }
   }
 
@@ -105,26 +106,26 @@ window.onload = () => {
 
     // Constructs a terrain of size width and height, consisting of square
     // cells which are of size cellSize on a side.
-    constructor(width, height, home_location, cellSize) {
-      this.width = width;
-      this.height = height;
-      this.home_location = home_location;
-      this.cellSize = cellSize;
-      this.width_in_cells = Math.ceil(this.width/this.cellSize);
-      this.height_in_cells = Math.ceil(this.height/this.cellSize);
+    constructor(width, height, homeLocation, cellSize) {
+      this._width = width;
+      this._height = height;
+      this._homeLocation = homeLocation;
+      this._cellSize = cellSize;
+      this._width_in_cells = Math.ceil(this._width/this._cellSize);
+      this._height_in_cells = Math.ceil(this._height/this._cellSize);
       // console.log(this.height_in_cells);
-      this.grid = new Array(this.height_in_cells);
-      for (let row = 0; row < this.height_in_cells; row++) {
-        this.grid[row] = new Array(this.width_in_cells);
-        for (let col = 0; col < this.width_in_cells; col++) {
-          this.grid[row][col] = new Cell();
+      this._grid = new Array(this._height_in_cells);
+      for (let row = 0; row < this._height_in_cells; row++) {
+        this._grid[row] = new Array(this._width_in_cells);
+        for (let col = 0; col < this._width_in_cells; col++) {
+          this._grid[row][col] = new Cell();
         }
       }
     }
 
-    pointToCellLoc(location) {
-      let col = Math.floor(location.x / this.cellSize);
-      let row = Math.floor(location.y / this.cellSize);
+    _pointToCellLoc(location) {
+      let col = Math.floor(location.x / this._cellSize);
+      let row = Math.floor(location.y / this._cellSize);
       return new CellLoc(row, col);
     }
 
@@ -146,8 +147,8 @@ window.onload = () => {
     // Drops the specified amount of resource marker in the cell that
     // location falls into.
     addResourceMarker(location, amount) {
-      let cellLoc = this.pointToCellLoc(location);
-      this.grid[cellLoc.row][cellLoc.col].resource_marker += amount;
+      let cellLoc = this._pointToCellLoc(location);
+      this._grid[cellLoc.row][cellLoc.col].resource_marker += amount;
     }
 
     // Drops the specified amount of home marker in the cell that location
@@ -160,6 +161,7 @@ window.onload = () => {
     visibleResourceDirection(location, range) {
     }
 
+    /*
     cellCircleBounds(radius) {
       let bounds = [];
       let cellRad = Math.round(radius / this.cellSize);
@@ -192,11 +194,12 @@ window.onload = () => {
         }
       }
     }
+    */
 
     // Returns angle in degrees of steepest upward slope of resource marker
     // gradient in range. Returns null if the terrain is flat.
     localResourceMarkerGradient(location, range) {
-      let cellLoc = this.pointToCellLoc(location);
+      let cellLoc = this._pointToCellLoc(location);
 
       /*
         Thinking through a possible approach to this algorithm ...
@@ -238,25 +241,25 @@ window.onload = () => {
     spawnColony() {
     }
 
-    decayMarkers() {
+    _decayMarkers() {
     }
 
-    update(){
-      this.decayMarkers();
+    _update(){
+      this._decayMarkers();
     }
 
     render() {
-      this.update();
+      this._update();
       var y = 0;
-      for (let row = 0; row < this.height_in_cells; row++) {
+      for (let row = 0; row < this._height_in_cells; row++) {
         var x = 0;
-        for (let col = 0; col < this.width_in_cells; col++) {
+        for (let col = 0; col < this._width_in_cells; col++) {
           let location = new Point(x, y);
-          let cell = this.grid[row][col];
-          cell.render(location, this.cellSize);
-          x = x + this.cellSize;
+          let cell = this._grid[row][col];
+          cell.render(location, this._cellSize);
+          x = x + this._cellSize;
         }
-        y = y + this.cellSize;
+        y = y + this._cellSize;
       }
     }
   }
@@ -267,36 +270,37 @@ window.onload = () => {
     constructor(terrain, loc, radius, direction, color, speed) {
       // The agent can interact with the terrain via the following object
       // reference.
-      this.terrain = terrain;
-      this.loc = loc;
-      this.radius = radius;
-      this.direction = direction;
-      this.color = color;
-      this.cRender = colorString(this.color);
-      this.speed = speed;
-      this.vision = 100;
-      this.visionBounds = terrain.cellCircleBounds(this.vision);
-      this.agitated = 0.01;
-      this.resource_memory = 0;
-      this.full = false;
-      this.headBack = false;
+      this._terrain = terrain;
+      this._loc = loc;
+      this._radius = radius;
+      this._direction = direction;
+      this._color = color;
+      this._cRender = colorString(this._color);
+      this._speed = speed;
+      this._vision = 100;
+      // this.visionBounds = terrain.cellCircleBounds(this.vision);
+      this._agitated = 0.01;
+      this._resource_memory = 0;
+      this._full = false;
+      // this.headBack = false;
     }
 
-    brighten(n) {
+    _brighten(n) {
       for (var i = 0; i < 3; i++) {
-        this.color[i] += n;
+        this._color[i] += n;
       }
-      this.cRender = colorString(color);
+      this._cRender = colorString(color);
     }
 
-    move(step) {
-      this.loc.x += step * MyMath.cos(this.direction);
-      this.loc.y += step * MyMath.sin(this.direction);
+    _move(step) {
+      this._loc.x += step * MyMath.cos(this._direction);
+      this._loc.y += step * MyMath.sin(this._direction);
     }
 
-    canSee(target) {
-      if (Math.hypot(this.loc.x - target.x, this.loc.y - target.y) <=
-          (this.vision + this.radius + target.r)) {
+    _canSee(target) {
+      // console.log(targetLocation.x);
+      if (Math.hypot(this._loc.x - target.loc.x, this._loc.y - target.loc.y) <=
+          (this._vision + this._radius + target.radius)) {
         return true;
       } else {
         return false;
@@ -304,13 +308,13 @@ window.onload = () => {
     }
 
     // Ideally, this would be a private method
-    angleTo(target) {
+    _angleTo(target) {
       /*
       Remember that the x-axis increases left-to-right, but the y-axis
       increases top-to-bottom. So angle increases clockwise.
       */
-      let dx = target.x - this.loc.x; // x-component of vector pointing at target
-      let dy = target.y - this.loc.y; // y-component of vector pointing at target
+      let dx = target.loc.x - this._loc.x; // x-component of vector pointing at target
+      let dy = target.loc.y - this._loc.y; // y-component of vector pointing at target
       let angle = MyMath.atan(dy/dx);
 
       if (dx == 0) {
@@ -342,9 +346,9 @@ window.onload = () => {
       return angle;
     }
 
-    reached(target) {
-      let threshold = this.speed / 2;
-      if (Math.hypot(this.loc.x - target.x, this.loc.y - target.y) <=
+    _reached(target) {
+      let threshold = this._speed / 2;
+      if (Math.hypot(this._loc.x - target.loc.x, this._loc.y - target.loc.y) <=
           threshold) {
         return true;
       } else {
@@ -352,7 +356,7 @@ window.onload = () => {
       }
     }
 
-    changeDirection() {
+    _changeDirection() {
       /*
       Currently, this method is very primitive. Below is a pseudo-code
       plan, or vision, for it:
@@ -386,18 +390,24 @@ window.onload = () => {
       only by the markers.
       */
 
-      if (this.canSee(blob) && !this.full) {
-        if (this.reached(blob)) {
-          this.full = true;
-          this.resource_memory = 1;
-          this.brighten(50);
+      /*
+      Note that is it's really dodgy that resource is being referenced directly
+      by this agent. Luckily, this is only temporary as we move to using the
+      Terrain class to store the resource information.
+      */
+
+      if (this._canSee(resource) && !this._full) {
+        if (this._reached(resource)) {
+          this._full = true;
+          this._resource_memory = 1;
+          this._brighten(50);
           console.log('Grabbed some food');
         } else {
-          this.direction = this.angleTo(blob);
+          this._direction = this._angleTo(resource);
         }
       } else {
-        if (Math.random() < this.agitated) {
-          this.direction = Math.random() * 360;
+        if (Math.random() < this._agitated) {
+          this._direction = Math.random() * 360;
         }
       }
 
@@ -416,19 +426,19 @@ window.onload = () => {
       negative angles are allowed, but it we decide that angles are
       to always be in the range [0..360), then the mod is necessary.
       */
-      if (this.loc.x > (WIDTH - this.radius) ||
-          this.loc.x < this.radius) {
-        this.direction = (180 - this.direction) % 360;
+      if (this._loc.x > (WIDTH - this._radius) ||
+          this._loc.x < this._radius) {
+        this._direction = (180 - this._direction) % 360;
       }
-      if (this.loc.y > (HEIGHT - this.radius) ||
-          this.loc.y < this.radius) {
-        this.direction = -this.direction % 360;
+      if (this._loc.y > (HEIGHT - this._radius) ||
+          this._loc.y < this._radius) {
+        this._direction = -this._direction % 360;
       }
     }
 
-    dropMarker() {
-      terrain.addResourceMarker(this.loc, this.resource_memory);
-      this.resource_memory *= 0.99;
+    _dropMarker() {
+      terrain.addResourceMarker(this._loc, this._resource_memory);
+      this._resource_memory *= 0.99;
       /*
       Periodically drop some marker at the current location based on
       the size of the resource seen and how long ago it was seen
@@ -441,10 +451,11 @@ window.onload = () => {
       */
     }
 
-    update() {
-      this.changeDirection();
-      //this.move(this.speed);
-      //this.dropMarker();
+    _update() {
+      this._changeDirection();
+      this._move(this._speed);
+      this._dropMarker();
+      /*
       if (this.headBack) {
         terrain.operateInGridBounds(this.loc, this.visionBounds,
           (terrainCtx, adjRow, adjCol) => {
@@ -455,48 +466,52 @@ window.onload = () => {
             }
           });
       }
+      */
     }
 
     render() {
-      this.update();
-      ctx.fillStyle = this.cRender;
+      this._update();
+      ctx.fillStyle = this._cRender;
       ctx.beginPath();
-      ctx.arc(this.loc.x, this.loc.y, this.radius, 0, Math.PI * 2);
+      ctx.arc(this._loc.x, this._loc.y, this._radius, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.save();
-      ctx.translate(this.loc.x, this.loc.y);
-      ctx.rotate((this.direction - 45) * 2 * Math.PI / 360);
-      ctx.fillRect(0, 0, this.radius, this.radius);
+      ctx.translate(this._loc.x, this._loc.y);
+      ctx.rotate((this._direction - 45) * 2 * Math.PI / 360);
+      ctx.fillRect(0, 0, this._radius, this._radius);
       ctx.restore();
 
-      ctx.strokeStyle = this.cRender;
+      ctx.strokeStyle = this._cRender;
       ctx.beginPath();
-      ctx.arc(this.loc.x, this.loc.y, this.vision, 0,
+      ctx.arc(this._loc.x, this._loc.y, this._vision, 0,
               Math.PI * 2);
       ctx.stroke();
     }
   }
 
-  const home_location = new Point(25, 25);
-  const grid_size = 10;
-  const terrain = new Terrain(WIDTH, HEIGHT, home_location, grid_size);
-  const location = new Point(205, 205);
+  // const homeLocation = new Point(205, 205);
+  const homeLocation = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
+  const gridSize = 10;
+  const terrain = new Terrain(WIDTH, HEIGHT, homeLocation, gridSize);
   const radius = 10; let direction = 0; let color = [0, 100, 100];
   const speed = 3;
-  var dot = new Agent(terrain, location, radius, direction, color,
+  var agent = new Agent(terrain, homeLocation, radius, direction, color,
                       speed);
-  let blob = new Food(250, 250);
+  // This gets referenced directly by the agent object, which is really dodgy.
+  let resource = new Resource(new Point(250, 250));
 
   function draw() {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
     terrain.render();
-    blob.render();
-    dot.render();
+    resource.render();
+    agent.render();
+    /*
     if (keypressed) {
 			dot.headBack = true;
     }
+    */
     window.requestAnimationFrame(draw);
   }
   draw();
