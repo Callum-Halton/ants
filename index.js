@@ -30,6 +30,24 @@ window.onload = () => {
     }
   }
 
+  // Based on https://gist.github.com/blixt/f17b47c62508be59987b
+  class Random {
+    constructor(seed) {
+      this._seed = seed % 2147483647;
+      if (this._seed <= 0) this._seed += 2147483646;
+    }
+
+    next() {
+      return this._seed = this._seed * 16807 % 2147483647;
+    }
+
+    // Returns a pseudo-random floating point number in range [0, 1).
+    nextFloat() {
+      return (this.next() - 1) / 2147483646;
+    }
+
+  }
+
   function colorString(color) {
       return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
   }
@@ -120,6 +138,7 @@ window.onload = () => {
           this._grid[row][col] = new Cell();
         }
       }
+      this._agents = [];
     }
 
     _pointToCellLoc(location) {
@@ -234,10 +253,17 @@ window.onload = () => {
     leastBlockedTurn(location, direction, range) {
     }
 
-    spawnAgentAtHome() {
+    spawnAgentAtHome(seed) {
+      this._agents.push(new Agent(this, this._homeLocation, seed))
     }
 
+    // The following does not work properly at the moment because the PRNG for
+    // each agent operates the same, so all the agents operate identically. Need
+    // a seedable PRNG.
     spawnColony() {
+      for (let i=0; i<3; i++) {
+        this.spawnAgentAtHome(i);
+      }
     }
 
     _decayMarkers() {
@@ -260,22 +286,23 @@ window.onload = () => {
         }
         y = y + this._cellSize;
       }
+      for (let i=0; i < this._agents.length; i++) {
+        this._agents[i].draw()
+      }
     }
   }
 
   class Agent {
-    // TODO: radius, color, direction, and speed can be fixed properties
-    // of the Agent class, rather then set via the constructor.
-    constructor(terrain, loc, radius, direction, color, speed) {
+    constructor(terrain, loc, seed) {
       // The agent can interact with the terrain via the following object
       // reference.
       this._terrain = terrain;
-      this._loc = loc;
-      this._radius = radius;
-      this._direction = direction;
-      this._color = color;
+      this._loc = new Point(loc.x, loc.y); // Callum, I need to talk with you about this line
+      this._radius = 10;
+      this._direction = 0;
+      this._color = [0, 100, 100];
       this._cRender = colorString(this._color);
-      this._speed = speed;
+      this._speed = 3;
       this._vision = 100;
       // Callum, Agent should not need to know anything about terrain cells
       // this.visionBounds = terrain.cellCircleBounds(this.vision);
@@ -283,18 +310,19 @@ window.onload = () => {
       this._resource_memory = 0;
       this._full = false;
       // this.headBack = false;
+      this._prng = new Random(seed);
     }
 
     _brighten(n) {
       for (var i = 0; i < 3; i++) {
         this._color[i] += n;
       }
-      this._cRender = colorString(color);
+      this._cRender = colorString(this._color);
     }
 
-    _move(step) {
-      this._loc.x += step * MyMath.cos(this._direction);
-      this._loc.y += step * MyMath.sin(this._direction);
+    _move() {
+      this._loc.x += this._speed * MyMath.cos(this._direction);
+      this._loc.y += this._speed * MyMath.sin(this._direction);
     }
 
     _canSee(target) {
@@ -405,8 +433,8 @@ window.onload = () => {
           this._direction = this._angleTo(resource);
         }
       } else {
-        if (Math.random() < this._agitated) {
-          this._direction = Math.random() * 360;
+        if (this._prng.nextFloat() < this._agitated) {
+          this._direction = this._prng.nextFloat() * 360;
         }
       }
 
@@ -436,7 +464,7 @@ window.onload = () => {
     }
 
     _dropMarker() {
-      terrain.addResourceMarker(this._loc, this._resource_memory);
+      this._terrain.addResourceMarker(this._loc, this._resource_memory);
       this._resource_memory *= 0.99;
       /*
       Periodically drop some marker at the current location based on
@@ -452,7 +480,7 @@ window.onload = () => {
 
     _update() {
       this._changeDirection();
-      this._move(this._speed);
+      this._move();
       this._dropMarker();
       /*
       if (this.headBack) {
@@ -493,10 +521,9 @@ window.onload = () => {
   const homeLocation = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
   const gridSize = 10;
   const terrain = new Terrain(WIDTH, HEIGHT, homeLocation, gridSize);
-  const radius = 10; let direction = 0; let color = [0, 100, 100];
-  const speed = 3;
-  var agent = new Agent(terrain, homeLocation, radius, direction, color,
-                      speed);
+  // terrain.spawnAgentAtHome();
+  terrain.spawnColony();
+  // var agent = new Agent(terrain, homeLocation);
   // This gets referenced directly by the agent object, which is really dodgy.
   let resource = new Resource(new Point(250, 250));
 
@@ -504,8 +531,8 @@ window.onload = () => {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
     terrain.draw();
-    resource.draw();
-    agent.draw();
+    resource.draw(); // This will soon be removed
+    // agent.draw();
     /*
     if (keypressed) {
 			dot.headBack = true;
