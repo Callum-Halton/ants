@@ -15,6 +15,7 @@ window.onload = () => {
   const WIDTH = 1000; //window.innerWidth;
   const HEIGHT = 1000; //window.innerHeight;
   const GRID_SIZE = 30;
+  const MAX_AGENTS = 1000;
   const FREEZE = false;
   const canvas = document.getElementById('canva');
   canvas.width = WIDTH;
@@ -146,7 +147,8 @@ window.onload = () => {
       this._grid[homeCellLoc.row][homeCellLoc.col].home = true;
       this._agents = [];
       this._localBounds = this._preCalcLocalBounds(this._cellSize * 3);
-      this._spawnColony();
+      this._meanStepsBetweenSpawns = 10;
+      this._spawnCountdown = 0;
     }
 
     _preCalcLocalBounds(radius) {
@@ -254,13 +256,11 @@ window.onload = () => {
     leastBlockedTurn(location, direction, range) {
     }
 
-    _spawnAgentAtHome(seed) {
+    _spawnAgentAtHome() {
       this._agents.push(new Agent(this, this._homeLocation))
     }
 
-    // The following does not work properly at the moment because the PRNG for
-    // each agent operates the same, so all the agents operate identically. Need
-    // a seedable PRNG.
+    /*
     _spawnColony() {
       let numberOfAgents;
       if (FREEZE) {
@@ -272,8 +272,27 @@ window.onload = () => {
         this._spawnAgentAtHome(i);
       }
     }
+    */
+
+    _update() {
+      if (FREEZE) {
+        if (this._agents.length < 1) {
+          this._spawnAgentAtHome();
+        }
+      } else if (this._agents.length < MAX_AGENTS) {
+        if (this._spawnCountdown == 0) {
+          this._spawnAgentAtHome();
+          this._spawnCountdown = Math.floor(
+              Math.random() * this._meanStepsBetweenSpawns * 2);
+        } else {
+          this._spawnCountdown -= 1;
+        }
+      }
+    }
 
     draw() {
+      this._update()
+
       // Cells
       var y = 0;
       for (let row = 0; row < this._heightInCells; row++) {
@@ -514,6 +533,7 @@ window.onload = () => {
 
     draw() {
       this._update();
+
       ctx.fillStyle = this._cRender;
       ctx.beginPath();
       ctx.arc(this._loc.x, this._loc.y, this._radius, 0, Math.PI * 2);
@@ -545,13 +565,31 @@ window.onload = () => {
   // This gets referenced directly by the agent object, which is really dodgy.
   let resource = new Resource(new Point(250, 250));
 
-  function draw() {
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    terrain.draw();
-    resource.draw();
-    window.requestAnimationFrame(draw);
+  var times = [];
+  var fps;
+
+  function showFps() {
+    ctx.fillStyle = "#000000"
+    ctx.font = "30px Courier";
+    ctx.fillText(fps + " FPS", WIDTH-125, HEIGHT-20);
   }
-  draw();
+
+  function refreshLoop() {
+    window.requestAnimationFrame(function() {
+      // ctx.fillStyle = 'white';
+      // ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      terrain.draw();
+      resource.draw();
+      showFps();
+      const now = performance.now();
+      while (times.length > 0 && times[0] <= now - 1000) {
+        times.shift();
+      }
+      times.push(now);
+      fps = times.length;
+      refreshLoop();
+    });
+  }
+  refreshLoop();
 
 }
