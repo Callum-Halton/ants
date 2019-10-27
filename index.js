@@ -14,7 +14,7 @@ function keyup(event) {
 window.onload = () => {
   const WIDTH = 1000; //window.innerWidth;
   const HEIGHT = 1000; //window.innerHeight;
-  const GRID_SIZE = 30;
+  const GRID_SIZE = 20;
   const MAX_AGENTS = 1000;
   const FREEZE = false;
   const canvas = document.getElementById('canva');
@@ -108,6 +108,7 @@ window.onload = () => {
       } else if (!hide_debug && this.debug) {
         ctx.fillStyle = "#00FF00";
       } else {
+        // The following calculation slows down rendering!
         ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, 255]);
       }
       ctx.fillRect(location.x, location.y, end_x, end_y);
@@ -166,6 +167,10 @@ window.onload = () => {
           }
       }
       return bounds;
+    }
+
+    getAgentsCount() {
+      return this._agents.length;
     }
 
     // Add a barrier the occupies all the cells that line passes through
@@ -571,7 +576,9 @@ window.onload = () => {
   function showFps() {
     ctx.fillStyle = "#000000"
     ctx.font = "30px Courier";
-    ctx.fillText(fps + " FPS", WIDTH-125, HEIGHT-20);
+    const xPos = WIDTH-240;
+    ctx.fillText(terrain.getAgentsCount() + " AGENTS", xPos, HEIGHT-50);
+    ctx.fillText(fps + " FPS", xPos, HEIGHT-20);
   }
 
   function refreshLoop() {
