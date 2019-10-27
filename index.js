@@ -1,14 +1,19 @@
 var hide_debug = true;
+var followGradient = false;
 
 function keydown(event) {
   if (event.key == "a") {
     hide_debug = false;
+  } else if (event.key == "f") {
+    followGradient = true;
   }
 }
 
 function keyup(event) {
   if (event.key == "a") {
     hide_debug = true;
+  } else if (event.key == "f") {
+    followGradient = false;
   }
 }
 
@@ -300,6 +305,14 @@ window.onload = () => {
       ctx.beginPath();
       ctx.arc(centerOfGravity.x, centerOfGravity.y, 5, 0, 2 * Math.PI);
       ctx.fill();
+
+      const threshold = 5;
+      if (Math.hypot(location.x - centerOfGravity.x,
+                     location.y - centerOfGravity.y) > threshold) {
+        return this._angleTo(location, centerOfGravity);
+      } else {
+        return null;
+      }
     }
 
     // Returns angle in degrees of steepest upward slope of home marger
@@ -486,9 +499,35 @@ window.onload = () => {
       Terrain class to store the resource information.
       */
 
-      // Just calling this here for debug purposes. Not yet acting upon it.
-      this._terrain.localResourceMarkerGradient(this._loc);
+      if (!this._full) {
+        if (this._canSee(resource)) {
+          if (this._reached(resource)) {
+            this._full = true;
+            this._resource_memory = 0.02;
+            this._color = [0, 255, 0];
+            this._cRender = colorString(this._color);
+            console.log('Grabbed some food');
+          } else {
+            this._direction = this._angleTo(resource);
+          }
+        } else {
+          let resourceMakerGradient = this._terrain.localResourceMarkerGradient(this._loc);
+          if (resourceMakerGradient) {
+            this._direction = resourceMakerGradient;
+          } else if (Math.random() < this._agitated) {
+            this._direction = Math.random() * 360;
+          }
+        }
+      } else {
+        if (Math.random() < this._agitated) {
+            this._direction = Math.random() * 360;
+        }
+      }
 
+      /*
+      if (followGradient) {
+        this._direction = this._terrain.localResourceMarkerGradient(this._loc);
+      }
       if (this._canSee(resource) && !this._full) {
         if (this._reached(resource)) {
           this._full = true;
@@ -503,6 +542,7 @@ window.onload = () => {
           this._direction = Math.random() * 360;
         }
       }
+      */
 
       /*
       Note that the following bounce mechanism can get caught in a high
@@ -531,7 +571,7 @@ window.onload = () => {
 
     _dropMarker() {
       this._terrain.addResourceMarker(this._loc, this._resource_memory);
-      this._resource_memory *= 0.999;
+      this._resource_memory *= 0.995;
       /*
       Periodically drop some marker at the current location based on
       the size of the resource seen and how long ago it was seen
