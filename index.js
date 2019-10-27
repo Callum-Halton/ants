@@ -17,18 +17,16 @@ window.onload = () => {
   const HEIGHT = 1000; //window.innerHeight;
   const GRID_SIZE = 20;
   const MAX_AGENTS = 1000;
-  const FREEZE = true;
+  const FREEZE = false;
   const canvas = document.getElementById('canva');
-  const canvasLeft = canvas.offsetLeft;
-  const canvasTop = canvas.offsetTop;
-  canvas.addEventListener('click', (event) => { canvasClick(event); }, false);
+  canvas.addEventListener('click', (event) => {canvasClick(event)}, false);
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
   const ctx = canvas.getContext('2d');
 
   function canvasClick(event) {
-    let x = event.pageX - canvasLeft;
-    let y = event.pageY - canvasTop;
+    let x = event.pageX - canvas.offsetLeft;
+    let y = event.pageY - canvas.offsetTop;
     let location = new Point(x, y);
     terrain.increaseResourceMarker(location, 0.1);
   }
@@ -164,6 +162,44 @@ window.onload = () => {
       this._spawnCountdown = 0;
     }
 
+    _angleTo(location, target) {
+      /*
+      Remember that the x-axis increases left-to-right, but the y-axis
+      increases top-to-bottom. So angle increases clockwise.
+      */
+      let dx = target.x - location.x; // x-component of vector pointing at target
+      let dy = target.y - location.y; // y-component of vector pointing at target
+      let angle = MyMath.atan(dy/dx);
+
+      if (dx == 0) {
+        // Handle case where dy/dx is undefined.
+        if (dy > 0) {
+          // Target is below
+          return 90;
+        } else {
+          // Target is above
+          return 270;
+        }
+      } else if (dy > 0) {
+        if (dx > 0) {
+          // Bottom-right quadrant
+          angle = angle;
+        } else {
+          // Bottom-left quadrant
+          angle = 180 + angle;
+        }
+      } else {
+        if (dx > 0) {
+          // Top-right quadrant
+          angle = 360 + angle;
+        } else {
+          // top-left quadrant
+          angle = 180 + angle;
+        }
+      }
+      return angle;
+    }
+
     _preCalcLocalBounds(radius) {
       let bounds = [];
       let cellRad = Math.round(radius / this._cellSize);
@@ -222,59 +258,36 @@ window.onload = () => {
     visibleResourceDirection(location, range) {
     }
 
-    // Instead of just marking the circle, the COG could be calculated here.
-    /*
-    _debugMarkLocalBounds(cellLoc) {
-      for (let row = -this._localBounds.length; row < this._localBounds.length; row++) {
-        let endCol = this._localBounds[Math.abs(row)];
-        let adjRow = row + cellLoc.row;
-        for (let col = -endCol + 1 + cellLoc.col; col < endCol + cellLoc.col; col++) {
-          if (adjRow >= 0 && col >= 0 &&
-              adjRow < this._heightInCells &&
-              col < this._widthInCells) {
-            this._grid[adjRow][col].debug = true;
-          }
-        }
-      }
-    }
-    */
-
     // Returns angle in degrees of steepest upward slope of resource marker
     // gradient in range. Returns null if the terrain is flat.
+    // For Callum: possibly implement a more efficient version of the COG
+    //             algorithm by factoring out some of the repeated
+    //             multiplications.
     localResourceMarkerGradient(location) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
       // let totalResource = 0;
       let total = 0;
-      // let weightedRowSums = 0;
-      // let colSums = Array(this._localBounds[0] * 2 - 1).fill(0);
       let nonNormalizedWeightedX = 0;
       let nonNormalizedWeightedY = 0;
       for (let row = -this._localBounds.length; row < this._localBounds.length; row++) {
         let endCol = this._localBounds[Math.abs(row)];
         let adjRow = row + cellLoc.row;
-        let y = adjRow * this._cellSize;
-        // let rowSum = 0;
+        let y = adjRow * this._cellSize + this._cellSize / 2;
         for (let col = -endCol + 1 + cellLoc.col; col < endCol + cellLoc.col; col++) {
           if (adjRow >= 0 && col >= 0 &&
               adjRow < this._heightInCells &&
               col < this._widthInCells) {
-            let x = col * this._cellSize;
+            let x = col * this._cellSize + this._cellSize / 2;
             let cell = this._grid[adjRow][col];
             nonNormalizedWeightedX += x * cell.resourceMarker;
             nonNormalizedWeightedY += y * cell.resourceMarker;
             total += cell.resourceMarker;
-            // this._grid[adjRow][col].debug = true;
-            cell.debug = true;
-            // rowSum += this._grid[adjRow][col].resource;
-            // colSums[col - cellLoc.col + this._localBounds[0] - 1] += this._grid[adjRow][col].resource;
-            // console.log(col - cellLoc.col + this._localBounds[0] - 1);
+            //cell.debug = true;
           }
         }
-        // weightedRowSums += rowSum * adjRow;
-        // totResource += rowSum;
+
       }
-      //for (let col = 0; col < colSums.length; col++) {
-      //}
+
       let normalizedWeightedX = location.x;
       let normalizedWeightedY = location.y;
       if (total > 0) {
@@ -287,22 +300,6 @@ window.onload = () => {
       ctx.beginPath();
       ctx.arc(centerOfGravity.x, centerOfGravity.y, 5, 0, 2 * Math.PI);
       ctx.fill();
-
-      /*
-        Thinking through a possible approach to this algorithm ...
-
-        a) Find center-of-gravity (COG) of local cells
-        b) Return the angle of vector from location to COG
-
-        For (a):
-          1. Find all the cells that are fully inside the circle with center at
-             location and with radius equal to range.
-             See https://stackoverflow.com/a/24170973/1841553
-          2. Iterate over all the cells, in any order, calculating the COG
-             x-coordinate and COG y-coordinate.
-
-        Handle cases where circle goes off the edge of the grid.
-      */
     }
 
     // Returns angle in degrees of steepest upward slope of home marger
@@ -393,7 +390,7 @@ window.onload = () => {
       // The agent can interact with the terrain via the following object
       // reference.
       this._terrain = terrain;
-      this._loc = new Point(loc.x, loc.y); // Callum, I need to talk with you about this line
+      this._loc = new Point(loc.x, loc.y);
       this._radius = 6;
       this._direction = Math.random() * 360;
       this._color = [0, 100, 100];
@@ -434,43 +431,9 @@ window.onload = () => {
       }
     }
 
-    // Ideally, this would be a private method
+    // Super-hacky, and will be deleted.
     _angleTo(target) {
-      /*
-      Remember that the x-axis increases left-to-right, but the y-axis
-      increases top-to-bottom. So angle increases clockwise.
-      */
-      let dx = target.loc.x - this._loc.x; // x-component of vector pointing at target
-      let dy = target.loc.y - this._loc.y; // y-component of vector pointing at target
-      let angle = MyMath.atan(dy/dx);
-
-      if (dx == 0) {
-        // Handle case where dy/dx is undefined.
-        if (dy > 0) {
-          // Target is below
-          return 90;
-        } else {
-          // Target is above
-          return 270;
-        }
-      } else if (dy > 0) {
-        if (dx > 0) {
-          // Bottom-right quadrant
-          angle = angle;
-        } else {
-          // Bottom-left quadrant
-          angle = 180 + angle;
-        }
-      } else {
-        if (dx > 0) {
-          // Top-right quadrant
-          angle = 360 + angle;
-        } else {
-          // top-left quadrant
-          angle = 180 + angle;
-        }
-      }
-      return angle;
+      return this._terrain._angleTo(this._loc, target.loc);
     }
 
     _reached(target) {
