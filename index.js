@@ -1,10 +1,11 @@
 var hide_debug = true;
-var freeze = false;
+
 function keydown(event) {
   if (event.key == "a") {
     hide_debug = false;
   }
 }
+
 function keyup(event) {
   if (event.key == "a") {
     hide_debug = true;
@@ -16,11 +17,21 @@ window.onload = () => {
   const HEIGHT = 1000; //window.innerHeight;
   const GRID_SIZE = 20;
   const MAX_AGENTS = 1000;
-  const FREEZE = false;
+  const FREEZE = true;
   const canvas = document.getElementById('canva');
+  const canvasLeft = canvas.offsetLeft;
+  const canvasTop = canvas.offsetTop;
+  canvas.addEventListener('click', (event) => { canvasClick(event); }, false);
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
   const ctx = canvas.getContext('2d');
+
+  function canvasClick(event) {
+    let x = event.pageX - canvasLeft;
+    let y = event.pageY - canvasTop;
+    let location = new Point(x, y);
+    terrain.increaseResourceMarker(location, 0.1);
+  }
 
   class MyMath {
     static sin(angle) {
@@ -147,7 +158,8 @@ window.onload = () => {
       let homeCellLoc = pointToCellLoc(this._homeLocation, this._cellSize);
       this._grid[homeCellLoc.row][homeCellLoc.col].home = true;
       this._agents = [];
-      this._localBounds = this._preCalcLocalBounds(this._cellSize * 3);
+      this._agentsVision = this._cellSize * 10;
+      this._localBounds = this._preCalcLocalBounds(this._agentsVision);
       this._meanStepsBetweenSpawns = 10;
       this._spawnCountdown = 0;
     }
@@ -164,13 +176,19 @@ window.onload = () => {
         }
         if (bounds.length != row + 1) {
             bounds.push(cellRad + 1);
-          }
+        }
       }
       return bounds;
     }
 
     getAgentsCount() {
       return this._agents.length;
+    }
+
+    increaseResourceMarker(location, value) {
+      let cellLoc = pointToCellLoc(location, this._cellSize);
+      // console.log("row: " + cellLoc.row + ", col: " + cellLoc.col);
+      this._grid[cellLoc.row][cellLoc.col].resourceMarker += value;
     }
 
     // Add a barrier the occupies all the cells that line passes through
@@ -206,26 +224,70 @@ window.onload = () => {
     }
 
     // Instead of just marking the circle, the COG could be calculated here.
+    /*
     _debugMarkLocalBounds(cellLoc) {
       for (let row = -this._localBounds.length; row < this._localBounds.length; row++) {
         let endCol = this._localBounds[Math.abs(row)];
-        for (let col = -endCol + 1; col < endCol; col++) {
-          let adjRow = row + cellLoc.row;
-          let adjCol = col + cellLoc.col;
-          if (adjRow >= 0 && adjCol >= 0 &&
+        let adjRow = row + cellLoc.row;
+        for (let col = -endCol + 1 + cellLoc.col; col < endCol + cellLoc.col; col++) {
+          if (adjRow >= 0 && col >= 0 &&
               adjRow < this._heightInCells &&
-              adjCol < this._widthInCells) {
-            this._grid[adjRow][adjCol].debug = true;
+              col < this._widthInCells) {
+            this._grid[adjRow][col].debug = true;
           }
         }
       }
     }
+    */
 
     // Returns angle in degrees of steepest upward slope of resource marker
     // gradient in range. Returns null if the terrain is flat.
     localResourceMarkerGradient(location) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
-      this._debugMarkLocalBounds(cellLoc);
+      // let totalResource = 0;
+      let total = 0;
+      // let weightedRowSums = 0;
+      // let colSums = Array(this._localBounds[0] * 2 - 1).fill(0);
+      let nonNormalizedWeightedX = 0;
+      let nonNormalizedWeightedY = 0;
+      for (let row = -this._localBounds.length; row < this._localBounds.length; row++) {
+        let endCol = this._localBounds[Math.abs(row)];
+        let adjRow = row + cellLoc.row;
+        let y = adjRow * this._cellSize;
+        // let rowSum = 0;
+        for (let col = -endCol + 1 + cellLoc.col; col < endCol + cellLoc.col; col++) {
+          if (adjRow >= 0 && col >= 0 &&
+              adjRow < this._heightInCells &&
+              col < this._widthInCells) {
+            let x = col * this._cellSize;
+            let cell = this._grid[adjRow][col];
+            nonNormalizedWeightedX += x * cell.resourceMarker;
+            nonNormalizedWeightedY += y * cell.resourceMarker;
+            total += cell.resourceMarker;
+            // this._grid[adjRow][col].debug = true;
+            cell.debug = true;
+            // rowSum += this._grid[adjRow][col].resource;
+            // colSums[col - cellLoc.col + this._localBounds[0] - 1] += this._grid[adjRow][col].resource;
+            // console.log(col - cellLoc.col + this._localBounds[0] - 1);
+          }
+        }
+        // weightedRowSums += rowSum * adjRow;
+        // totResource += rowSum;
+      }
+      //for (let col = 0; col < colSums.length; col++) {
+      //}
+      let normalizedWeightedX = location.x;
+      let normalizedWeightedY = location.y;
+      if (total > 0) {
+        normalizedWeightedX = nonNormalizedWeightedX / total;
+        normalizedWeightedY = nonNormalizedWeightedY / total;
+      }
+      let centerOfGravity = new Point(normalizedWeightedX, normalizedWeightedY);
+      // Draw a dot where the COG is, just for debug
+      ctx.fillStyle = "#FF0000";
+      ctx.beginPath();
+      ctx.arc(centerOfGravity.x, centerOfGravity.y, 5, 0, 2 * Math.PI);
+      ctx.fill();
 
       /*
         Thinking through a possible approach to this algorithm ...
@@ -237,14 +299,8 @@ window.onload = () => {
           1. Find all the cells that are fully inside the circle with center at
              location and with radius equal to range.
              See https://stackoverflow.com/a/24170973/1841553
-          2. Calculate the horizontal COG for each row of cells inside the
-             circle.
-          3. Calculate the horizontal COG for all the cells in the circle by
-             finding the COG of the row COGs calculated in step (2).
-          4. Calculate the vertical COG for each column of cells inside the
-             cicle.
-          5. Calculate the vertical COG for all the cells in the cirlce by
-             finding the COG of the column COGs calculated in step (4).
+          2. Iterate over all the cells, in any order, calculating the COG
+             x-coordinate and COG y-coordinate.
 
         Handle cases where circle goes off the edge of the grid.
       */
@@ -262,7 +318,7 @@ window.onload = () => {
     }
 
     _spawnAgentAtHome() {
-      this._agents.push(new Agent(this, this._homeLocation))
+      this._agents.push(new Agent(this, this._homeLocation, this._agentsVision));
     }
 
     /*
@@ -334,7 +390,7 @@ window.onload = () => {
   }
 
   class Agent {
-    constructor(terrain, loc) {
+    constructor(terrain, loc, vision) {
       // The agent can interact with the terrain via the following object
       // reference.
       this._terrain = terrain;
@@ -344,9 +400,7 @@ window.onload = () => {
       this._color = [0, 100, 100];
       this._cRender = colorString(this._color);
       this._speed = 3;
-      this._vision = 100;
-      // Callum, Agent should not need to know anything about terrain cells
-      // this.visionBounds = terrain.cellCircleBounds(this.vision);
+      this._vision = vision;
       this._agitated = 0.01;
       this._resource_memory = 0;
       this._full = false;
@@ -515,7 +569,7 @@ window.onload = () => {
 
     _dropMarker() {
       this._terrain.addResourceMarker(this._loc, this._resource_memory);
-      this._resource_memory *= 0.99;
+      this._resource_memory *= 0.999;
       /*
       Periodically drop some marker at the current location based on
       the size of the resource seen and how long ago it was seen
@@ -562,7 +616,7 @@ window.onload = () => {
 
   let homeLocation;
   if (FREEZE) {
-    homeLocation = new Point(500, 500);
+    homeLocation = new Point(510, 510);
   } else {
     homeLocation = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
   }
