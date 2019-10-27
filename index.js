@@ -187,7 +187,6 @@ window.onload = () => {
 
     increaseResourceMarker(location, value) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
-      // console.log("row: " + cellLoc.row + ", col: " + cellLoc.col);
       this._grid[cellLoc.row][cellLoc.col].resourceMarker += value;
     }
 
