@@ -45,7 +45,7 @@ window.onload = () => {
       console.log("Warning: The Resource class has been deprecated and will be removed")
       this.loc = location
       this.radius = 20;
-      this._color = colorString([Math.random() * 255, Math.random() * 255, Math.random() * 255]);
+      this._color = colorString([0, 0, 255]);
     }
 
     draw() {
@@ -93,20 +93,23 @@ window.onload = () => {
       this.debug = false;
     }
 
+    _forget() {
+      this.resourceMarker *= 0.999;
+    }
+
     draw(location, cellSize) {
+      this._forget();
+
       let end_x = location.x + cellSize;
       let end_y = location.y + cellSize;
       if (this.home) {
-        ctx.fillStyle = "#FF0000";
+        ctx.fillStyle = "#FFFF00";
       } else if (!hide_debug && this.debug) {
         ctx.fillStyle = "#00FF00";
       } else {
         ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, 255]);
       }
       ctx.fillRect(location.x, location.y, end_x, end_y);
-      // Rendering is too slow with both stroke and fill on all the cells
-      // ctx.strokeStyle = "#F8F8F8";
-      // ctx.strokeRect(location.x, location.y, end_x, end_y);
     }
   }
 
@@ -143,6 +146,7 @@ window.onload = () => {
       this._grid[homeCellLoc.row][homeCellLoc.col].home = true;
       this._agents = [];
       this._localBounds = this._preCalcLocalBounds(this._cellSize * 3);
+      this._spawnColony();
     }
 
     _preCalcLocalBounds(radius) {
@@ -250,14 +254,14 @@ window.onload = () => {
     leastBlockedTurn(location, direction, range) {
     }
 
-    spawnAgentAtHome(seed) {
+    _spawnAgentAtHome(seed) {
       this._agents.push(new Agent(this, this._homeLocation))
     }
 
     // The following does not work properly at the moment because the PRNG for
     // each agent operates the same, so all the agents operate identically. Need
     // a seedable PRNG.
-    spawnColony() {
+    _spawnColony() {
       let numberOfAgents;
       if (FREEZE) {
         numberOfAgents = 1;
@@ -265,20 +269,12 @@ window.onload = () => {
         numberOfAgents = 100;
       }
       for (let i=0; i<numberOfAgents; i++) {
-        this.spawnAgentAtHome(i);
+        this._spawnAgentAtHome(i);
       }
     }
 
-    _decayMarkers() {
-    }
-
-    _update(){
-      this._decayMarkers();
-    }
-
     draw() {
-      this._update();
-
+      // Cells
       var y = 0;
       for (let row = 0; row < this._heightInCells; row++) {
         var x = 0;
@@ -291,6 +287,7 @@ window.onload = () => {
         y = y + this._cellSize;
       }
 
+      // Grid
       ctx.strokeStyle = "#F8F8F8";
       for (let lineX = this._cellSize; lineX < this._width; lineX += this._cellSize) {
         ctx.beginPath();
@@ -305,6 +302,7 @@ window.onload = () => {
         ctx.stroke();
       }
 
+      // Agents
       for (let i=0; i < this._agents.length; i++) {
         this._agents[i].draw()
       }
@@ -454,7 +452,7 @@ window.onload = () => {
       if (this._canSee(resource) && !this._full) {
         if (this._reached(resource)) {
           this._full = true;
-          this._resource_memory = 1;
+          this._resource_memory = 0.02;
           this._brighten(50);
           console.log('Grabbed some food');
         } else {
@@ -544,9 +542,6 @@ window.onload = () => {
     homeLocation = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
   }
   const terrain = new Terrain(WIDTH, HEIGHT, homeLocation, GRID_SIZE);
-  // terrain.spawnAgentAtHome();
-  terrain.spawnColony();
-  // var agent = new Agent(terrain, homeLocation);
   // This gets referenced directly by the agent object, which is really dodgy.
   let resource = new Resource(new Point(250, 250));
 
