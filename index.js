@@ -91,6 +91,7 @@ window.onload = () => {
     return new CellLoc(row, col);
   }
 
+  // may be redundant
   class Line {
     constructor(point_a, point_b) {
       this.point_a = point_a;
