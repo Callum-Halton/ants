@@ -1,19 +1,17 @@
 var hide_debug = true;
-var followGradient = false;
+var stopAnimation = false;
 
 function keydown(event) {
   if (event.key == "a") {
     hide_debug = false;
-  } else if (event.key == "f") {
-    followGradient = true;
+  } else if (event.key == "s") {
+    stopAnimation = true;
   }
 }
 
 function keyup(event) {
   if (event.key == "a") {
     hide_debug = true;
-  } else if (event.key == "f") {
-    followGradient = false;
   }
 }
 
@@ -57,8 +55,8 @@ window.onload = () => {
   // This class is deprecated and will be removed.
   class Resource {
     constructor(location) {
-      console.log("Warning: The Resource class has been deprecated and will be removed")
-      this.loc = location
+      console.log("Warning: The Resource class has been deprecated and will be removed");
+      this.loc = location;
       this.radius = 20;
       this._color = colorString([0, 0, 255]);
     }
@@ -122,6 +120,9 @@ window.onload = () => {
         ctx.fillStyle = "#FFFF00";
       } else if (!hide_debug && this.debug) {
         ctx.fillStyle = "#00FF00";
+      } else if (this.resource) {
+          ctx.fillStyle = colorString([(1 - this.resource) * 255, (1 - this.resource) * 255, 255]);
+        console.log('boo ya');
       } else {
         // The following calculation slows down rendering!
         ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, 255]);
@@ -145,7 +146,7 @@ window.onload = () => {
 
     // Constructs a terrain of size width and height, consisting of square
     // cells which are of size cellSize on a side.
-    constructor(width, height, homeLocation, cellSize) {
+    constructor(width, height, homeLocation, cellSize, resources) {
       this._width = width;
       this._height = height;
       this._homeLocation = homeLocation;
@@ -166,6 +167,10 @@ window.onload = () => {
       this._localBounds = this._preCalcLocalBounds(this._agentsVision);
       this._meanStepsBetweenSpawns = 10;
       this._spawnCountdown = 0;
+      // Evolves resource implementation
+      for (let resource = 0; resource < resources.length; resource++) {
+        this._grid[resources[resource].loc.row][resources[resource].loc.col].resource = resources[resource].amount;
+      }
     }
 
     _angleTo(location, target) {
@@ -269,7 +274,7 @@ window.onload = () => {
     // For Callum: possibly implement a more efficient version of the COG
     //             algorithm by factoring out some of the repeated
     //             multiplications.
-    localResourceMarkerGradient(location) {
+    identifyPathAngle(location) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
       // let totalResource = 0;
       let total = 0;
@@ -284,6 +289,9 @@ window.onload = () => {
               adjRow < this._heightInCells &&
               col < this._widthInCells) {
             let x = col * this._cellSize + this._cellSize / 2;
+            if (this._grid[adjRow][col].resource > 0) {
+              return this._angleTo(location, new Point(x, y));
+            }
             let cell = this._grid[adjRow][col];
             nonNormalizedWeightedX += x * cell.resourceMarker;
             nonNormalizedWeightedY += y * cell.resourceMarker;
@@ -362,7 +370,7 @@ window.onload = () => {
     }
 
     draw() {
-      this._update()
+      this._update();
 
       // Cells
       var y = 0;
@@ -394,7 +402,7 @@ window.onload = () => {
 
       // Agents
       for (let i=0; i < this._agents.length; i++) {
-        this._agents[i].draw()
+        this._agents[i].draw();
       }
     }
   }
@@ -501,7 +509,7 @@ window.onload = () => {
       */
 
       if (!this._full) {
-        if (this._canSee(resource)) {
+        /*if (this._canSee(resource)) {
           if (this._reached(resource)) {
             this._full = true;
             this._resource_memory = 0.02;
@@ -511,14 +519,14 @@ window.onload = () => {
           } else {
             this._direction = this._angleTo(resource);
           }
-        } else {
-          let resourceMakerGradient = this._terrain.localResourceMarkerGradient(this._loc);
-          if (resourceMakerGradient) {
-            this._direction = resourceMakerGradient;
+        } else {*/
+          let pathAngle = this._terrain.identifyPathAngle(this._loc);
+          if (pathAngle) {
+            this._direction = pathAngle;
           } else if (Math.random() < this._agitated) {
             this._direction = Math.random() * 360;
           }
-        }
+        //}
       } else {
         if (Math.random() < this._agitated) {
             this._direction = Math.random() * 360;
@@ -623,7 +631,10 @@ window.onload = () => {
   } else {
     homeLocation = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
   }
-  const terrain = new Terrain(WIDTH, HEIGHT, homeLocation, GRID_SIZE);
+  const resourcesForTerrain = [
+    {loc: new CellLoc(20, 20), amount: 1}
+  ];
+  const terrain = new Terrain(WIDTH, HEIGHT, homeLocation, GRID_SIZE, resourcesForTerrain);
   // This gets referenced directly by the agent object, which is really dodgy.
   let resource = new Resource(new Point(250, 250));
 
@@ -651,9 +662,12 @@ window.onload = () => {
       }
       times.push(now);
       fps = times.length;
-      refreshLoop();
-    });
+      if (!stopAnimation) {
+        refreshLoop();
+      }
+      });
   }
+
   refreshLoop();
 
 }
