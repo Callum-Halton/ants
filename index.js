@@ -1,9 +1,9 @@
-var hide_debug = true;
+var hideDebug = true;
 var stopAnimation = false;
 
 function keydown(event) {
   if (event.key == "a") {
-    hide_debug = false;
+    hideDebug = false;
   } else if (event.key == "s") {
     stopAnimation = true;
   }
@@ -11,7 +11,7 @@ function keydown(event) {
 
 function keyup(event) {
   if (event.key == "a") {
-    hide_debug = true;
+    hideDebug = true;
   }
 }
 
@@ -31,7 +31,8 @@ window.onload = () => {
     let x = event.pageX - canvas.offsetLeft;
     let y = event.pageY - canvas.offsetTop;
     let location = new Point(x, y);
-    terrain.increaseResourceMarker(location, 0.1);
+    // terrain.increaseResourceMarker(location, 0.1);
+    terrain.increaseResource(location, 0.1);
   }
 
   class MyMath {
@@ -52,6 +53,7 @@ window.onload = () => {
       return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
   }
 
+  /*
   // This class is deprecated and will be removed.
   class Resource {
     constructor(location) {
@@ -68,6 +70,7 @@ window.onload = () => {
       ctx.fill();
     }
   }
+  */
 
   class Point {
     constructor(x, y) {
@@ -89,7 +92,9 @@ window.onload = () => {
     return new CellLoc(row, col);
   }
 
-  // may be redundant
+  // Intended for implementing barriers. Lines can be passed into terrian,
+  // which can then find which cells they pass through. See
+  // Terrain::addBarrier()
   class Line {
     constructor(point_a, point_b) {
       this.point_a = point_a;
@@ -118,11 +123,11 @@ window.onload = () => {
       let end_y = location.y + cellSize;
       if (this.home) {
         ctx.fillStyle = "#FFFF00";
-      } else if (!hide_debug && this.debug) {
+      } else if (!hideDebug && this.debug) {
         ctx.fillStyle = "#00FF00";
       } else if (this.resource) {
           ctx.fillStyle = colorString([(1 - this.resource) * 255, (1 - this.resource) * 255, 255]);
-        console.log('boo ya');
+        // console.log('boo ya');
       } else {
         // The following calculation slows down rendering!
         ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, 255]);
@@ -130,6 +135,11 @@ window.onload = () => {
       ctx.fillRect(location.x, location.y, end_x, end_y);
     }
   }
+
+  var SignalEnum = {
+    RESOURCE: 1,
+    RESOURCE_MARKER: 2,
+  };
 
   class Terrain {
     /*
@@ -237,6 +247,11 @@ window.onload = () => {
       this._grid[cellLoc.row][cellLoc.col].resourceMarker += value;
     }
 
+    increaseResource(location, value) {
+      let cellLoc = pointToCellLoc(location, this._cellSize);
+      this._grid[cellLoc.row][cellLoc.col].resource += value;
+    }
+
     // Add a barrier the occupies all the cells that line passes through
     addBarrier(line) {
     }
@@ -250,6 +265,17 @@ window.onload = () => {
     // location falls into. Once the cell is empty of resource, no more can
     // be removed. Returns the amount of resource removed.
     removeResource(location, targetAmount) {
+      let cellLoc = pointToCellLoc(location, this._cellSize);
+      let cell = this._grid[cellLoc.row][cellLoc.col];
+      let resourceAvailable = cell.resource;
+      let amountToRemove = 0;
+      if (resourceAvailable < targetAmount) {
+        amountToRemove = resourceAvailable;
+      } else {
+        amountToRemove = targetAmount;
+      }
+      cell.resource -= amountToRemove;
+      return amountToRemove;
     }
 
     // Drops the specified amount of resource marker in the cell that
@@ -269,12 +295,12 @@ window.onload = () => {
     visibleResourceDirection(location, range) {
     }
 
-    // Returns angle in degrees of steepest upward slope of resource marker
+    // Returns angle in degrees of steepest upward slope of signal
     // gradient in range. Returns null if the terrain is flat.
     // For Callum: possibly implement a more efficient version of the COG
     //             algorithm by factoring out some of the repeated
     //             multiplications.
-    identifyPathAngle(location) {
+    upGradientDirection(/* Point */ location, /* SignalEnum */ signal) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
       // let totalResource = 0;
       let total = 0;
@@ -293,9 +319,17 @@ window.onload = () => {
               return this._angleTo(location, new Point(x, y));
             }
             let cell = this._grid[adjRow][col];
-            nonNormalizedWeightedX += x * cell.resourceMarker;
-            nonNormalizedWeightedY += y * cell.resourceMarker;
-            total += cell.resourceMarker;
+            let signalValue = null;
+            if (signal == SignalEnum.RESOURCE) {
+              signalValue = cell.resource;
+            } else if (signal == SignalEnum.RESOURCE_MARKER) {
+              signalValue = cell.resourceMaker;
+            } else {
+              throw "Unknown signal type: " + signal;
+            }
+            nonNormalizedWeightedX += x * signalValue;
+            nonNormalizedWeightedY += y * signalValue;
+            total += signalValue;
             //cell.debug = true;
           }
         }
@@ -420,9 +454,11 @@ window.onload = () => {
       this._speed = 3;
       this._vision = vision;
       this._agitated = 0.01;
-      this._resource_memory = 0;
-      this._full = false;
+      this._resourceMemory = 0;
+      // this._full = false;
       // this.headBack = false;
+      this._carriedResource = 0;
+      this._resourceCarryingCapacity = 0.02;
     }
 
     _brighten(n) {
@@ -444,6 +480,7 @@ window.onload = () => {
       if (this._loc.y >= HEIGHT) { this._loc.y = HEIGHT-1; }
     }
 
+    /*
     _canSee(target) {
       if (Math.hypot(this._loc.x - target.loc.x, this._loc.y - target.loc.y) <=
           (this._vision + this._radius + target.radius)) {
@@ -452,6 +489,7 @@ window.onload = () => {
         return false;
       }
     }
+    */
 
     // Super-hacky, and will be deleted.
     _angleTo(target) {
@@ -508,50 +546,40 @@ window.onload = () => {
       Terrain class to store the resource information.
       */
 
-      if (!this._full) {
-        /*if (this._canSee(resource)) {
-          if (this._reached(resource)) {
-            this._full = true;
-            this._resource_memory = 0.02;
-            this._color = [0, 255, 0];
-            this._cRender = colorString(this._color);
-            console.log('Grabbed some food');
+      if (this._carriedResource < this._resourceCarryingCapacity) {
+        // First, try to consume resource
+        // TODO: limit rate that agents can remove resource
+        let removedResource = this._terrain.removeResource(
+            this._loc, this._resourceCarryingCapacity - this._carriedResource);
+        this._carriedResource += removedResource;
+        this._resourceMemory = this._carriedResource;
+        if (removedResource == 0) {
+          // There ain't no resource here, so let's look for some ...
+          let directionToResource = this._terrain.upGradientDirection(
+              this._loc, SignalEnum.RESOURCE);
+          if (directionToResource) {
+            // Can see some resource
+            this._direction = directionToResource;
           } else {
-            this._direction = this._angleTo(resource);
+            // Cannot see resource, so let's try smelling for some ...
+            let directionUpResourceMarkerGradient =
+                this._terrain.upGradientDirection(this._loc,
+                                                  SignalEnum.RESOURCE_MARKER);
+            if (directionUpResourceMarkerGradient) {
+              this._direction = directionUpResourceMarkerGradient;
+            } else {
+              // Cannot smell resource, so let's just wander around aimlessly
+              if (Math.random() < this._agitated) {
+                this._direction = Math.random() * 360;
+              } // else just keep on truckin' in the same direction
+            }
           }
-        } else {*/
-          let pathAngle = this._terrain.identifyPathAngle(this._loc);
-          if (pathAngle) {
-            this._direction = pathAngle;
-          } else if (Math.random() < this._agitated) {
-            this._direction = Math.random() * 360;
-          }
-        //}
-      } else {
-        if (Math.random() < this._agitated) {
-            this._direction = Math.random() * 360;
         }
-      }
-
-      /*
-      if (followGradient) {
-        this._direction = this._terrain.localResourceMarkerGradient(this._loc);
-      }
-      if (this._canSee(resource) && !this._full) {
-        if (this._reached(resource)) {
-          this._full = true;
-          this._resource_memory = 0.02;
-          this._brighten(50);
-          console.log('Grabbed some food');
-        } else {
-          this._direction = this._angleTo(resource);
-        }
-      } else {
+      } else { // TODO: Implement home search process
         if (Math.random() < this._agitated) {
           this._direction = Math.random() * 360;
         }
       }
-      */
 
       /*
       Note that the following bounce mechanism can get caught in a high
@@ -579,15 +607,15 @@ window.onload = () => {
     }
 
     _dropMarker() {
-      this._terrain.addResourceMarker(this._loc, this._resource_memory);
-      this._resource_memory *= 0.995;
+      this._terrain.addResourceMarker(this._loc, this._resourceMemory);
+      this._resourceMemory *= 0.995;
       /*
       Periodically drop some marker at the current location based on
       the size of the resource seen and how long ago it was seen
-      (resource_memory). So when a resource is located, the agent's
-      resource_memory jumps up to reflect the resource size, and then that
+      (resourceMemory). So when a resource is located, the agent's
+      resourceMemory jumps up to reflect the resource size, and then that
       memory decays over time. The agent drops a marker with an intensity
-      proportional to its current resource_memory.
+      proportional to its current resourceMemory.
 
       Also drop home_marker in a similar way.
       */
@@ -632,11 +660,11 @@ window.onload = () => {
     homeLocation = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
   }
   const resourcesForTerrain = [
-    {loc: new CellLoc(20, 20), amount: 1}
+    {loc: new CellLoc(20, 20), amount: 1.0}
   ];
   const terrain = new Terrain(WIDTH, HEIGHT, homeLocation, GRID_SIZE, resourcesForTerrain);
   // This gets referenced directly by the agent object, which is really dodgy.
-  let resource = new Resource(new Point(250, 250));
+  // let resource = new Resource(new Point(250, 250));
 
   var times = [];
   var fps;
@@ -649,13 +677,27 @@ window.onload = () => {
     ctx.fillText(fps + " FPS", xPos, HEIGHT-20);
   }
 
+  var framesLeftToShowNotice = 3 * 30;
+
+  function showNotice() {
+    if (framesLeftToShowNotice > 0) {
+      framesLeftToShowNotice -= 1;
+      ctx.fillStyle = "#000000"
+      ctx.font = "30px Courier";
+      const xPos = WIDTH / 2 - 150;
+      const yPos = HEIGHT / 2 - 20;
+      ctx.fillText("CLICK TO ADD RESOURCE", xPos, yPos);
+    }
+  }
+
   function refreshLoop() {
     window.requestAnimationFrame(function() {
       // ctx.fillStyle = 'white';
       // ctx.fillRect(0, 0, WIDTH, HEIGHT);
       terrain.draw();
-      resource.draw();
+      // resource.draw();
       showFps();
+      showNotice();
       const now = performance.now();
       while (times.length > 0 && times[0] <= now - 1000) {
         times.shift();
