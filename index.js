@@ -295,11 +295,13 @@ window.onload = () => {
     visibleResourceDirection(location, range) {
     }
 
-    // Returns angle in degrees of steepest upward slope of signal
-    // gradient in range. Returns null if the terrain is flat.
-    // For Callum: possibly implement a more efficient version of the COG
-    //             algorithm by factoring out some of the repeated
-    //             multiplications.
+    /*
+    Returns angle in degrees of optimal direction for a given signal in bounds.
+    Returns null if an optimal direction cannot be determined from the signal.
+    For Callum: possibly implement a more efficient version of the COG
+               algorithm by factoring out some of the repeated
+               multiplications.
+    */
     findDirection(/* Point */ location, /* SignalEnum */ signal) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
       // let totalResource = 0;
