@@ -113,7 +113,7 @@ window.onload = () => {
     }
 
     _forget() {
-      this.resourceMarker *= 0.999;
+      this.resourceMarker *= 0.99;
     }
 
     draw(location, cellSize) {
@@ -268,14 +268,14 @@ window.onload = () => {
       let cellLoc = pointToCellLoc(location, this._cellSize);
       let cell = this._grid[cellLoc.row][cellLoc.col];
       let resourceAvailable = cell.resource;
-      let amountToRemove = 0;
-      if (resourceAvailable < targetAmount) {
-        amountToRemove = resourceAvailable;
+      let amountRemoved = 0;
+      if (resourceAvailable <= targetAmount) {
+        amountRemoved = resourceAvailable;
       } else {
-        amountToRemove = targetAmount;
+        amountRemoved = targetAmount;
       }
-      cell.resource -= amountToRemove;
-      return amountToRemove;
+      cell.resource -= amountRemoved;
+      return amountRemoved;
     }
 
     // Drops the specified amount of resource marker in the cell that
@@ -315,15 +315,29 @@ window.onload = () => {
               adjRow < this._heightInCells &&
               col < this._widthInCells) {
             let x = col * this._cellSize + this._cellSize / 2;
-            if (this._grid[adjRow][col].resource > 0) {
-              return this._angleTo(location, new Point(x, y));
+            if (signal == SignalEnum.RESOURCE) {
+              // This code short-cuts for resource signal
+              if (this._grid[adjRow][col].resource > 0) {
+                /*
+                This just finds the first resource inside the bounds and
+                returns the direction to it. An improvement would be to
+                return the direction to the neareast resource in bounds, or
+                perhaps to find the "best" cell in bounds, which might be
+                a combination of the nearest and/or most resource-rich.
+                */
+                return this._angleTo(location, new Point(x, y));
+              } else {
+                continue;
+              }
             }
             let cell = this._grid[adjRow][col];
-            let signalValue = null;
+            let signalValue = 0;
             if (signal == SignalEnum.RESOURCE) {
+              // This branch should never be taken because of the short-cut above
+              // I was experimenting with resource COG.
               signalValue = cell.resource;
             } else if (signal == SignalEnum.RESOURCE_MARKER) {
-              signalValue = cell.resourceMaker;
+              signalValue = cell.resourceMarker;
             } else {
               throw "Unknown signal type: " + signal;
             }
@@ -333,9 +347,11 @@ window.onload = () => {
             //cell.debug = true;
           }
         }
-
       }
-
+      if (signal == SignalEnum.RESOURCE) {
+        // If resource was not found in the loop above, then none was found.
+        return null;
+      }
       let normalizedWeightedX = location.x;
       let normalizedWeightedY = location.y;
       if (total > 0) {
@@ -349,7 +365,7 @@ window.onload = () => {
       ctx.arc(centerOfGravity.x, centerOfGravity.y, 5, 0, 2 * Math.PI);
       ctx.fill();
 
-      const threshold = 5;
+      const threshold = this._cellSize;
       if (Math.hypot(location.x - centerOfGravity.x,
                      location.y - centerOfGravity.y) > threshold) {
         return this._angleTo(location, centerOfGravity);
@@ -546,11 +562,12 @@ window.onload = () => {
       Terrain class to store the resource information.
       */
 
-      if (this._carriedResource < this._resourceCarryingCapacity) {
+      let remainingCapacity = this._resourceCarryingCapacity - this._carriedResource;
+      if (remainingCapacity) {
         // First, try to consume resource
         // TODO: limit rate that agents can remove resource
-        let removedResource = this._terrain.removeResource(
-            this._loc, this._resourceCarryingCapacity - this._carriedResource);
+        let removedResource = this._terrain.removeResource(this._loc,
+                                                           remainingCapacity);
         this._carriedResource += removedResource;
         this._resourceMemory = this._carriedResource;
         if (removedResource == 0) {
@@ -576,6 +593,7 @@ window.onload = () => {
           }
         }
       } else { // TODO: Implement home search process
+        this._cRender = colorString([0, 255, 0]);
         if (Math.random() < this._agitated) {
           this._direction = Math.random() * 360;
         }
@@ -660,7 +678,7 @@ window.onload = () => {
     homeLocation = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
   }
   const resourcesForTerrain = [
-    {loc: new CellLoc(20, 20), amount: 1.0}
+    {loc: new CellLoc(5, 5), amount: 1.0}
   ];
   const terrain = new Terrain(WIDTH, HEIGHT, homeLocation, GRID_SIZE, resourcesForTerrain);
   // This gets referenced directly by the agent object, which is really dodgy.
