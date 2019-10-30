@@ -319,9 +319,9 @@ window.onload = () => {
               // This code short-cuts for resource signal
               if (this._grid[adjRow][col].resource > 0) {
                 /*
-                This just finds the first resource inside the bounds and
-                returns the direction to it. An improvement would be to
-                return the direction to the neareast resource in bounds, or
+                This just finds the first resource (in raster order) inside the
+                bounds and returns the direction to it. An improvement would be
+                to return the direction to the neareast resource in bounds, or
                 perhaps to find the "best" cell in bounds, which might be
                 a combination of the nearest and/or most resource-rich.
                 */
