@@ -300,7 +300,7 @@ window.onload = () => {
     // For Callum: possibly implement a more efficient version of the COG
     //             algorithm by factoring out some of the repeated
     //             multiplications.
-    upGradientDirection(/* Point */ location, /* SignalEnum */ signal) {
+    findDirection(/* Point */ location, /* SignalEnum */ signal) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
       // let totalResource = 0;
       let total = 0;
@@ -572,7 +572,7 @@ window.onload = () => {
         this._resourceMemory = this._carriedResource;
         if (removedResource == 0) {
           // There ain't no resource here, so let's look for some ...
-          let directionToResource = this._terrain.upGradientDirection(
+          let directionToResource = this._terrain.findDirection(
               this._loc, SignalEnum.RESOURCE);
           if (directionToResource) {
             // Can see some resource
@@ -580,8 +580,8 @@ window.onload = () => {
           } else {
             // Cannot see resource, so let's try smelling for some ...
             let directionUpResourceMarkerGradient =
-                this._terrain.upGradientDirection(this._loc,
-                                                  SignalEnum.RESOURCE_MARKER);
+                this._terrain.findDirection(this._loc,
+                                            SignalEnum.RESOURCE_MARKER);
             if (directionUpResourceMarkerGradient) {
               this._direction = directionUpResourceMarkerGradient;
             } else {
