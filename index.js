@@ -31,7 +31,7 @@ window.onload = () => {
     let x = event.pageX - canvas.offsetLeft;
     let y = event.pageY - canvas.offsetTop;
     let location = new Point(x, y);
-    // terrain.increaseResourceMarker(location, 0.1);
+    // terrain.increaseMarker(location, 0.1, "resourceMarker");
     terrain.increaseResource(location, 0.1);
   }
 
@@ -155,15 +155,17 @@ window.onload = () => {
 
   class CogHelper {
     constructor(defaultPosition, markerType) {
-     this.markerType // this is a string.
+     this.markerType = markerType// this is a string.
+     // console.log(this.markerType);
      this._defaultPosition = defaultPosition;
      this._total = 0;
-     this._nonNormalizedCOG = new Point(0, 0);
+     this._nonNormalizedCog = new Point(0, 0);
     }
     update(/* CellWithLocation */ cellWithLocation) {
-     let markerValue = cellWithLocation.cell[this._markerType];
-     this._nonNormalizedCOG.x = cellWithLocation.loc.x * markerValue;
-     this._nonNormalizedCOG.y = cellWithLocation.loc.y * markerValue;
+     let markerValue = cellWithLocation.cell[this.markerType];
+     // console.log(markerValue);
+     this._nonNormalizedCog.x += cellWithLocation.loc.x * markerValue;
+     this._nonNormalizedCog.y += cellWithLocation.loc.y * markerValue;
      this._total += markerValue;
     }
     getNormalizedCog() {
@@ -358,6 +360,7 @@ window.onload = () => {
       let cellWithLocationIterator = this._localCellIteratorGenerator(location);
       for(let cellWithLocation of cellWithLocationIterator) {
         for (let cogHelperKey in cogHelpers) {
+          // console.log(cogHelperKey);
           cogHelpers[cogHelperKey].update(cellWithLocation);
         }
         for (let destinationArrayKey in destinationArrays) {
@@ -367,7 +370,9 @@ window.onload = () => {
         }
       }
       for (let cogHelperKey in cogHelpers) {
-          features[cogHelperKey] = cogHelpers[cogHelperKey].getNormalizedCog();
+        // console.log(cogHelperKey);
+        // console.log(cogHelpers[cogHelperKey].getNormalizedCog());
+        features[cogHelperKey] = cogHelpers[cogHelperKey].getNormalizedCog();
       }
       for (let destinationArrayKey in destinationArrays) {
         features[destinationArrayKey] = destinationArrays[destinationArrayKey];
@@ -620,6 +625,8 @@ window.onload = () => {
             // Cannot see resource, so let's try smelling for some ...
             let directionUpResourceMarkerGradient =
                 this._upGradientDirection(features.resourceMarker);
+                // console.log(this.resourceMarker);
+                // console.log(directionUpResourceMarkerGradient);
             if (directionUpResourceMarkerGradient) {
               this._direction = directionUpResourceMarkerGradient;
             } else {
