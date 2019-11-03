@@ -19,7 +19,7 @@ window.onload = () => {
   const WIDTH = 1000; //window.innerWidth;
   const HEIGHT = 1000; //window.innerHeight;
   const GRID_SIZE = 20;
-  const MAX_AGENTS = 100;
+  const MAX_AGENTS = 1000;
   const FREEZE = false;
   const canvas = document.getElementById('canva');
   canvas.addEventListener('click', (event) => {canvasClick(event)}, false);
@@ -134,14 +134,13 @@ window.onload = () => {
         ctx.fillStyle = "#00FF00";
       } else if (this.resource) {
           ctx.fillStyle = colorString([(1 - this.resource) * 255, (1 - this.resource) * 255, 255]);
-      } else if (this.resourceMarker) {
-        // The following calculation slows down rendering!
-        ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, 255]);
-      } else if (this.homeMarker) {
-        ctx.fillStyle = colorString([255, (1 - this.homeMarker) * 255, 255]);
       } else {
-        ctx.fillStyle = 'white';
+        // The following calculation slows down rendering!
+        ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, (1 - this.homeMarker) * 255, 255]);
       }
+      // } else {
+      //   ctx.fillStyle = 'white';
+      // }
       ctx.fillRect(location.x, location.y, end_x, end_y);
     }
   }
@@ -669,7 +668,7 @@ window.onload = () => {
       this._terrain.increaseMarker(this._loc, this._resourceMemory, "resourceMarker");
       this._resourceMemory *= 0.995;
       this._terrain.increaseMarker(this._loc, this._homeMemory, "homeMarker");
-      this._homeMemory *= 0.95;
+      this._homeMemory *= 0.99;
       /*
       Periodically drop some marker at the current location based on
       the size of the resource seen and how long ago it was seen
@@ -768,7 +767,7 @@ window.onload = () => {
       if (!stopAnimation) {
         refreshLoop();
       }
-      });
+    });
   }
 
   refreshLoop();
