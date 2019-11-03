@@ -138,14 +138,14 @@ window.onload = () => {
       ctx.fillRect(location.x, location.y, end_x, end_y);
     }
   }
-
+/*
   var signalEnum = {
     RESOURCE: 1,
-    RESOURCE_MARKER: 2,
+    RESOURCE_MARKER: 2, // empty trash later
     HOME: 3,
     HOME_MARKER: 4
   };
-
+*/
   class Terrain {
     /*
     If we store the pheromone markers using independent objects then we
