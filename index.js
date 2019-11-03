@@ -138,14 +138,23 @@ window.onload = () => {
       ctx.fillRect(location.x, location.y, end_x, end_y);
     }
   }
-/*
+
+  // A cell with the location of its center
+  class CellWithLocation {
+    constructor(/* Cell */ cell, /* Point */ location) {
+      this.cell = cell;
+      this.loc = location;
+    }
+  }
+
+  /*
   var signalEnum = {
     RESOURCE: 1,
     RESOURCE_MARKER: 2, // empty trash later
     HOME: 3,
     HOME_MARKER: 4
   };
-*/
+  */
   class Terrain {
     /*
     If we store the pheromone markers using independent objects then we
@@ -304,6 +313,25 @@ window.onload = () => {
     // Returns angle in degrees to resource within range; null if no
     // resource in range.
     visibleResourceDirection(location, range) {
+    }
+
+    * _localCellIteratorGenerator(/* Point */ location) {
+      let cellLoc = pointToCellLoc(location, this._cellSize);
+      for (let row = -this._localBounds.length; row < this._localBounds.length; row++) {
+        let endCol = this._localBounds[Math.abs(row)];
+        let adjRow = row + cellLoc.row;
+        let y = adjRow * this._cellSize + this._cellSize / 2;
+        for (let col = -endCol + 1 + cellLoc.col; col < endCol + cellLoc.col; col++) {
+          if (adjRow >= 0 && col >= 0 &&
+              adjRow < this._heightInCells &&
+              col < this._widthInCells) {
+            let x = col * this._cellSize + this._cellSize / 2;
+            let cell = this._grid[adjRow][col];
+            let loc = new Point(x, y);
+            yield new CellWithLocation(cell, loc);
+          }
+        }
+      }
     }
 
     /*
