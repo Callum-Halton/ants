@@ -19,7 +19,7 @@ window.onload = () => {
   const WIDTH = 1000; //window.innerWidth;
   const HEIGHT = 1000; //window.innerHeight;
   const GRID_SIZE = 20;
-  const MAX_AGENTS = 1000;
+  const MAX_AGENTS = 100;
   const FREEZE = false;
   const canvas = document.getElementById('canva');
   canvas.addEventListener('click', (event) => {canvasClick(event)}, false);
@@ -106,14 +106,21 @@ window.onload = () => {
     constructor() {
       this.barrier = false;
       this.resource = 0;
-      this.home = false;
+      this.home = 0;
       this.resourceMarker = 0;
       this.homeMarker = 0;
       this.debug = false;
     }
 
     _forget() {
-      this.resourceMarker *= 0.99;
+      this.resourceMarker *= 0.999;
+      if (this.resourceMarker < 0.01) {
+        this.resourceMarker = 0;
+      }
+      this.homeMarker *= 0.999;
+      if (this.homeMarker < 0.01) {
+        this.homeMarker = 0;
+      }
     }
 
     draw(location, cellSize) {
@@ -144,6 +151,34 @@ window.onload = () => {
     constructor(/* Cell */ cell, /* Point */ location) {
       this.cell = cell;
       this.loc = location;
+    }
+  }
+
+  class CogHelper {
+    constructor(defaultPosition, markerType) {
+     this.markerType // this is a string.
+     this._defaultPosition = defaultPosition;
+     this._total = 0;
+     this._nonNormalizedCOG = new Point(0, 0);
+    }
+    update(/* CellWithLocation */ cellWithLocation) {
+     let markerValue = cellWithLocation.cell[this._markerType];
+     this._nonNormalizedCOG.x = cellWithLocation.loc.x * markerValue;
+     this._nonNormalizedCOG.y = cellWithLocation.loc.y * markerValue;
+     this._total += markerValue;
+    }
+    getNormalizedCog() {
+      if (this._total > 0) {
+        let normalizedCog = new Point(this._nonNormalizedCog.x / this._total,
+                                      this._nonNormalizedCog.y / this._total);
+        ctx.fillStyle = "#FF0000";
+        ctx.beginPath();
+        ctx.arc(normalizedCog.x, normalizedCog.y, 5, 0, 2 * Math.PI);
+        ctx.fill();
+        return normalizedCog;
+      } else {
+        return this._defaultPosition;
+      }
     }
   }
 
@@ -189,7 +224,7 @@ window.onload = () => {
         }
       }
       let homeCellLoc = pointToCellLoc(this._homeLocation, this._cellSize);
-      this._grid[homeCellLoc.row][homeCellLoc.col].home = true;
+      this._grid[homeCellLoc.row][homeCellLoc.col].home = 1;
       this._agents = [];
       this._agentsVision = this._cellSize * 10;
       this._localBounds = this._preCalcLocalBounds(this._agentsVision);
@@ -199,44 +234,6 @@ window.onload = () => {
       for (let resource = 0; resource < resources.length; resource++) {
         this._grid[resources[resource].loc.row][resources[resource].loc.col].resource = resources[resource].amount;
       }
-    }
-
-    _angleTo(location, target) {
-      /*
-      Remember that the x-axis increases left-to-right, but the y-axis
-      increases top-to-bottom. So angle increases clockwise.
-      */
-      let dx = target.x - location.x; // x-component of vector pointing at target
-      let dy = target.y - location.y; // y-component of vector pointing at target
-      let angle = MyMath.atan(dy/dx);
-
-      if (dx == 0) {
-        // Handle case where dy/dx is undefined.
-        if (dy > 0) {
-          // Target is below
-          return 90;
-        } else {
-          // Target is above
-          return 270;
-        }
-      } else if (dy > 0) {
-        if (dx > 0) {
-          // Bottom-right quadrant
-          angle = angle;
-        } else {
-          // Bottom-left quadrant
-          angle = 180 + angle;
-        }
-      } else {
-        if (dx > 0) {
-          // Top-right quadrant
-          angle = 360 + angle;
-        } else {
-          // top-left quadrant
-          angle = 180 + angle;
-        }
-      }
-      return angle;
     }
 
     _preCalcLocalBounds(radius) {
@@ -342,78 +339,39 @@ window.onload = () => {
                multiplications.
     */
     // features is an object with a property for each feature that is being searched for e.g.
-    // { HOME: null, HOME_MARKER: null }
+    // { home: null, homeMarker: null }
     getLocalFeatures(/* Point */ location, /* features object */ features) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
-      // let totalResource = 0;
-      let total = 0;
-      let nonNormalizedWeightedX = 0;
-      let nonNormalizedWeightedY = 0;
-      for (let row = -this._localBounds.length; row < this._localBounds.length; row++) {
-        let endCol = this._localBounds[Math.abs(row)];
-        let adjRow = row + cellLoc.row;
-        let y = adjRow * this._cellSize + this._cellSize / 2;
-        for (let col = -endCol + 1 + cellLoc.col; col < endCol + cellLoc.col; col++) {
-          if (adjRow >= 0 && col >= 0 &&
-              adjRow < this._heightInCells &&
-              col < this._widthInCells) {
-            let x = col * this._cellSize + this._cellSize / 2;
-            if (signal == SignalEnum.RESOURCE) {
-              // This code short-cuts for resource signal
-              if (this._grid[adjRow][col].resource > 0) {
-                /*
-                This just finds the first resource (in raster order) inside the
-                bounds and returns the direction to it. An improvement would be
-                to return the direction to the neareast resource in bounds, or
-                perhaps to find the "best" cell in bounds, which might be
-                a combination of the nearest and/or most resource-rich.
-                */
-                return this._angleTo(location, new Point(x, y));
-              } else {
-                continue;
-              }
-            }
-            let cell = this._grid[adjRow][col];
-            let signalValue = 0;
-            if (signal == SignalEnum.RESOURCE) {
-              // This branch should never be taken because of the short-cut above
-              // I was experimenting with resource COG.
-              signalValue = cell.resource;
-            } else if (signal == SignalEnum.RESOURCE_MARKER) {
-              signalValue = cell.resourceMarker;
-            } else {
-              throw "Unknown signal type: " + signal;
-            }
-            nonNormalizedWeightedX += x * signalValue;
-            nonNormalizedWeightedY += y * signalValue;
-            total += signalValue;
-            //cell.debug = true;
+      let cogHelpers = {};
+      if ("resourceMarker" in features) {
+        cogHelpers.resourceMarker = new CogHelper(location, "resourceMarker");
+      }
+      if ("homeMarker" in features) {
+        cogHelpers.homeMarker =  new CogHelper(location, "homeMarker");
+      }
+      let destinationArrays = {};
+      if ("resource" in features) {
+        destinationArrays.resource = [];
+      }
+      if ("home" in features) {
+        destinationArrays.home = [];
+      }
+      let cellWithLocationIterator = this._localCellIteratorGenerator(location);
+      for(let cellWithLocation of cellWithLocationIterator) {
+        for (let cogHelperKey in cogHelpers) {
+          cogHelpers[cogHelperKey].update(cellWithLocation);
+        }
+        for (let destinationArrayKey in destinationArrays) {
+          if (cellWithLocation.cell[destinationArrayKey] > 0) {
+            destinationArrays[destinationArrayKey].push(cellWithLocation.loc);
           }
         }
       }
-      if (signal == SignalEnum.RESOURCE) {
-        // If resource was not found in the loop above, then none was found.
-        return null;
+      for (let cogHelperKey in cogHelpers) {
+          features[cogHelperKey] = cogHelpers[cogHelperKey].getNormalizedCog();
       }
-      let normalizedWeightedX = location.x;
-      let normalizedWeightedY = location.y;
-      if (total > 0) {
-        normalizedWeightedX = nonNormalizedWeightedX / total;
-        normalizedWeightedY = nonNormalizedWeightedY / total;
-      }
-      let centerOfGravity = new Point(normalizedWeightedX, normalizedWeightedY);
-      // Draw a dot where the COG is, just for debug
-      ctx.fillStyle = "#FF0000";
-      ctx.beginPath();
-      ctx.arc(centerOfGravity.x, centerOfGravity.y, 5, 0, 2 * Math.PI);
-      ctx.fill();
-
-      const threshold = this._cellSize;
-      if (Math.hypot(location.x - centerOfGravity.x,
-                     location.y - centerOfGravity.y) > threshold) {
-        return this._angleTo(location, centerOfGravity);
-      } else {
-        return null;
+      for (let destinationArrayKey in destinationArrays) {
+        features[destinationArrayKey] = destinationArrays[destinationArrayKey];
       }
     }
 
@@ -521,6 +479,44 @@ window.onload = () => {
       this._homeMemory = 1;
     }
 
+    _angleTo(target) {
+      /*
+      Remember that the x-axis increases left-to-right, but the y-axis
+      increases top-to-bottom. So angle increases clockwise.
+      */
+      let dx = target.x - this._loc.x; // x-component of vector pointing at target
+      let dy = target.y - this._loc.y; // y-component of vector pointing at target
+      let angle = MyMath.atan(dy/dx);
+
+      if (dx == 0) {
+        // Handle case where dy/dx is undefined.
+        if (dy > 0) {
+          // Target is below
+          return 90;
+        } else {
+          // Target is above
+          return 270;
+        }
+      } else if (dy > 0) {
+        if (dx > 0) {
+          // Bottom-right quadrant
+          angle = angle;
+        } else {
+          // Bottom-left quadrant
+          angle = 180 + angle;
+        }
+      } else {
+        if (dx > 0) {
+          // Top-right quadrant
+          angle = 360 + angle;
+        } else {
+          // top-left quadrant
+          angle = 180 + angle;
+        }
+      }
+      return angle;
+    }
+
     _brighten(n) {
       for (var i = 0; i < 3; i++) {
         this._color[i] += n;
@@ -541,21 +537,6 @@ window.onload = () => {
     }
 
     /*
-    _canSee(target) {
-      if (Math.hypot(this._loc.x - target.loc.x, this._loc.y - target.loc.y) <=
-          (this._vision + this._radius + target.radius)) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-    */
-
-    // Super-hacky, and will be deleted.
-    _angleTo(target) {
-      return this._terrain._angleTo(this._loc, target.loc);
-    }
-
     _reached(target) {
       let threshold = this._speed / 2;
       if (Math.hypot(this._loc.x - target.loc.x, this._loc.y - target.loc.y) <=
@@ -563,6 +544,17 @@ window.onload = () => {
         return true;
       } else {
         return false;
+      }
+    }
+    */
+
+    _upGradientDirection(centerOfGravity) {
+      const threshold = this._terrain._cellSize; // hack for now
+      if (Math.hypot(location.x - centerOfGravity.x,
+                     location.y - centerOfGravity.y) > threshold) {
+        return this._angleTo(location, centerOfGravity);
+      } else {
+        return null;
       }
     }
 
@@ -607,26 +599,28 @@ window.onload = () => {
       */
 
       let remainingCapacity = this._resourceCarryingCapacity - this._carriedResource;
-      if (remainingCapacity) {
+      if (remainingCapacity) { // head for resource
         // First, try to consume resource
         // TODO: limit rate that agents can remove resource
         let removedResource = this._terrain.removeResource(this._loc,
                                                            remainingCapacity);
         this._carriedResource += removedResource;
         this._resourceMemory = this._carriedResource;
-
         if (removedResource == 0) {
           // There ain't no resource here, so let's look for some ...
-          let directionToResource = this._terrain.findDirection(
-              this._loc, SignalEnum.RESOURCE);
-          if (directionToResource) {
-            // Can see some resource
-            this._direction = directionToResource;
+          let features = {
+            resource: null,
+            resourceMarker: null
+          }
+          this._terrain.getLocalFeatures(this._loc, features)
+          if (features.resource.length > 0) {
+            // Can see resource, so move towards it
+            // The following can be improved to go for nearest / best
+            this._direction = this._angleTo(features.resource[0]);
           } else {
             // Cannot see resource, so let's try smelling for some ...
             let directionUpResourceMarkerGradient =
-                this._terrain.findDirection(this._loc,
-                                            SignalEnum.RESOURCE_MARKER);
+                this._upGradientDirection(features.resourceMarker);
             if (directionUpResourceMarkerGradient) {
               this._direction = directionUpResourceMarkerGradient;
             } else {
@@ -637,7 +631,8 @@ window.onload = () => {
             }
           }
         }
-      } else { // TODO: Implement home search process
+      } else { // head for home
+        // COMPLETE THIS SECTION
         this._cRender = colorString([0, 255, 0]);
         if (Math.random() < this._agitated) {
           this._direction = Math.random() * 360;
@@ -670,6 +665,7 @@ window.onload = () => {
     }
 
     _dropMarkers() {
+      // Should we only drop resource marker once carrying capacity is full?
       this._terrain.increaseMarker(this._loc, this._resourceMemory, "resourceMarker");
       this._resourceMemory *= 0.995;
       this._terrain.increaseMarker(this._loc, this._homeMemory, "homeMarker");
