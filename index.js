@@ -127,18 +127,23 @@ window.onload = () => {
         ctx.fillStyle = "#00FF00";
       } else if (this.resource) {
           ctx.fillStyle = colorString([(1 - this.resource) * 255, (1 - this.resource) * 255, 255]);
-        // console.log('boo ya');
-      } else {
+      } else if (this.resourceMarker) {
         // The following calculation slows down rendering!
         ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, 255]);
+      } else if (this.homeMarker) {
+        ctx.fillStyle = colorString([255, (1 - this.homeMarker) * 255, 255]);
+      } else {
+        ctx.fillStyle = 'white';
       }
       ctx.fillRect(location.x, location.y, end_x, end_y);
     }
   }
 
-  var SignalEnum = {
+  var signalEnum = {
     RESOURCE: 1,
     RESOURCE_MARKER: 2,
+    HOME: 3,
+    HOME_MARKER: 4
   };
 
   class Terrain {
@@ -157,6 +162,10 @@ window.onload = () => {
     // Constructs a terrain of size width and height, consisting of square
     // cells which are of size cellSize on a side.
     constructor(width, height, homeLocation, cellSize, resources) {
+      this._maximumMarkerIntensities = {
+        resourceMarker: 1,
+        homeMarker: 1
+      };
       this._width = width;
       this._height = height;
       this._homeLocation = homeLocation;
@@ -242,9 +251,11 @@ window.onload = () => {
       return this._agents.length;
     }
 
-    increaseResourceMarker(location, value) {
+    increaseMarker(location, amount, markerType) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
-      this._grid[cellLoc.row][cellLoc.col].resourceMarker += value;
+      if (this._grid[cellLoc.row][cellLoc.col][markerType] <= this._maximumMarkerIntensities[markerType]) {
+        this._grid[cellLoc.row][cellLoc.col][markerType] += amount;
+      }
     }
 
     increaseResource(location, value) {
@@ -268,7 +279,7 @@ window.onload = () => {
       let cellLoc = pointToCellLoc(location, this._cellSize);
       let cell = this._grid[cellLoc.row][cellLoc.col];
       let resourceAvailable = cell.resource;
-      let amountRemoved = 0;
+      let amountRemoved;
       if (resourceAvailable <= targetAmount) {
         amountRemoved = resourceAvailable;
       } else {
@@ -280,10 +291,10 @@ window.onload = () => {
 
     // Drops the specified amount of resource marker in the cell that
     // location falls into.
-    addResourceMarker(location, amount) {
+    /*addResourceMarker(location, amount) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
       this._grid[cellLoc.row][cellLoc.col].resourceMarker += amount;
-    }
+    }*/
 
     // Drops the specified amount of home marker in the cell that location
     // falls into.
@@ -302,7 +313,9 @@ window.onload = () => {
                algorithm by factoring out some of the repeated
                multiplications.
     */
-    findDirection(/* Point */ location, /* SignalEnum */ signal) {
+    // features is an object with a property for each feature that is being searched for e.g.
+    // { HOME: null, HOME_MARKER: null }
+    getLocalFeatures(/* Point */ location, /* features object */ features) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
       // let totalResource = 0;
       let total = 0;
@@ -477,6 +490,7 @@ window.onload = () => {
       // this.headBack = false;
       this._carriedResource = 0;
       this._resourceCarryingCapacity = 0.02;
+      this._homeMemory = 1;
     }
 
     _brighten(n) {
@@ -572,6 +586,7 @@ window.onload = () => {
                                                            remainingCapacity);
         this._carriedResource += removedResource;
         this._resourceMemory = this._carriedResource;
+
         if (removedResource == 0) {
           // There ain't no resource here, so let's look for some ...
           let directionToResource = this._terrain.findDirection(
@@ -626,9 +641,11 @@ window.onload = () => {
       }
     }
 
-    _dropMarker() {
-      this._terrain.addResourceMarker(this._loc, this._resourceMemory);
+    _dropMarkers() {
+      this._terrain.increaseMarker(this._loc, this._resourceMemory, "resourceMarker");
       this._resourceMemory *= 0.995;
+      this._terrain.increaseMarker(this._loc, this._homeMemory, "homeMarker");
+      this._homeMemory *= 0.95;
       /*
       Periodically drop some marker at the current location based on
       the size of the resource seen and how long ago it was seen
@@ -645,7 +662,7 @@ window.onload = () => {
       this._changeDirection();
       if (!FREEZE) {
         this._move();
-        this._dropMarker();
+        this._dropMarkers();
       }
     }
 
