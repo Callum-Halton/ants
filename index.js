@@ -133,7 +133,7 @@ window.onload = () => {
       } else if (!hideDebug && this.debug) {
         ctx.fillStyle = "#00FF00";
       } else if (this.resource) {
-          ctx.fillStyle = colorString([(1 - this.resource) * 255, (1 - this.resource) * 255, 255]);
+          ctx.fillStyle = colorString([(1 - this.resource) * 255, 255, (1 - this.resource) * 255]);
       } else {
         // The following calculation slows down rendering!
         ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, (1 - this.homeMarker) * 255, 255]);
@@ -475,7 +475,7 @@ window.onload = () => {
       // this.headBack = false;
       this._carriedResource = 0;
       this._resourceCarryingCapacity = 0.02;
-      this._homeMemory = 1;
+      this._homeMemory = 0.02;
     }
 
     _angleTo(target) {
