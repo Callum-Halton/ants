@@ -118,14 +118,15 @@ window.onload = () => {
 
       let end_x = location.x + cellSize;
       let end_y = location.y + cellSize;
+      let circle = false;
       if (this.home) {
         ctx.fillStyle = "#FFFF00";
-      // } else if (!hideDebug && this.debug) {
-      //   ctx.fillStyle = "#00FF00";
+        circle = true;
       } else if (this.resource) {
         ctx.fillStyle = colorString([(1 - this.resource) * 255,
-                                     (1 - this.resource) * 255,
+                                     255,
                                      255]);
+        circle = true;
       } else {
         // The following calculation slows down rendering!
         ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255,
@@ -136,6 +137,12 @@ window.onload = () => {
       //   ctx.fillStyle = 'white';
       // }
       ctx.fillRect(location.x, location.y, end_x, end_y);
+      if (circle) {
+        ctx.fillStyle = "#000000";
+        ctx.beginPath();
+        ctx.arc(location.x + cellSize/2, location.y + cellSize / 2, 5, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     }
   }
 
@@ -599,7 +606,6 @@ window.onload = () => {
         let removedResource = this._terrain.removeResource(this._loc,
                                                            remainingCapacity);
         this._carriedResource += removedResource;
-        this._resourceMemory = this._carriedResource;
         if (removedResource == 0) {
           // There ain't no resource here, so let's look for some ...
           let features = {
@@ -626,6 +632,7 @@ window.onload = () => {
           }
         }
       } else { // head for home
+        this._resourceMemory = this._carriedResource;
         // COMPLETE THIS SECTION
         this._cRender = colorString([0, 255, 0]);
         if (Math.random() < this._agitated) {
