@@ -1,17 +1,22 @@
 var hideDebug = true;
 var stopAnimation = false;
+var MORERESOURCE = false;
 
 function keydown(event) {
   if (event.key == "a") {
     hideDebug = false;
   } else if (event.key == "s") {
     stopAnimation = true;
+  } else if (event.key == "r") {
+    MORERESOURCE = true;
   }
 }
 
 function keyup(event) {
   if (event.key == "a") {
     hideDebug = true;
+  } else if (event.key == "r") {
+    MORERESOURCE = false;
   }
 }
 
@@ -31,8 +36,12 @@ window.onload = () => {
     let x = event.pageX - canvas.offsetLeft;
     let y = event.pageY - canvas.offsetTop;
     let location = new Point(x, y);
-    // terrain.increaseMarker(location, 0.1, "resourceMarker");
-    terrain.increaseResource(location, 0.1);
+    // terrain.increaseResourceMarker(location, 0.1);
+    if (MORERESOURCE) {
+      terrain.increaseResource(location, 0.1);
+    } else {
+      terrain.increaseMarker(location, 0.1, "resourceMarker");
+    }
   }
 
   class MyMath {
@@ -52,25 +61,6 @@ window.onload = () => {
   function colorString(color) {
       return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
   }
-
-  /*
-  // This class is deprecated and will be removed.
-  class Resource {
-    constructor(location) {
-      console.log("Warning: The Resource class has been deprecated and will be removed");
-      this.loc = location;
-      this.radius = 20;
-      this._color = colorString([0, 0, 255]);
-    }
-
-    draw() {
-      ctx.fillStyle = this._color;
-      ctx.beginPath();
-      ctx.arc(this.loc.x, this.loc.y, this.radius, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-  */
 
   class Point {
     constructor(x, y) {
@@ -113,12 +103,12 @@ window.onload = () => {
     }
 
     _forget() {
-      this.resourceMarker *= 0.999;
-      if (this.resourceMarker < 0.01) {
+      this.resourceMarker *= 0.99;
+      if (this.resourceMarker < 0.05) {
         this.resourceMarker = 0;
       }
-      this.homeMarker *= 0.999;
-      if (this.homeMarker < 0.01) {
+      this.homeMarker *= 0.99;
+      if (this.homeMarker < 0.05) {
         this.homeMarker = 0;
       }
     }
@@ -133,10 +123,10 @@ window.onload = () => {
       } else if (!hideDebug && this.debug) {
         ctx.fillStyle = "#00FF00";
       } else if (this.resource) {
-          ctx.fillStyle = colorString([(1 - this.resource) * 255, 255, (1 - this.resource) * 255]);
+          ctx.fillStyle = colorString([(1 - this.resource) * 255, (1 - this.resource) * 255, 255]);
       } else {
         // The following calculation slows down rendering!
-        ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, (1 - this.homeMarker) * 255, 255]);
+        ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, (1 - this.homeMarker) * 255]);
       }
       // } else {
       //   ctx.fillStyle = 'white';
@@ -155,15 +145,13 @@ window.onload = () => {
 
   class CogHelper {
     constructor(defaultPosition, markerType) {
-     this.markerType = markerType// this is a string.
-     // console.log(this.markerType);
-     this._defaultPosition = defaultPosition;
-     this._total = 0;
-     this._nonNormalizedCog = new Point(0, 0);
+      this.markerType = markerType; // this is a string.
+      this._defaultPosition = defaultPosition;
+      this._total = 0;
+      this._nonNormalizedCog = new Point(0, 0);
     }
     update(/* CellWithLocation */ cellWithLocation) {
      let markerValue = cellWithLocation.cell[this.markerType];
-     // console.log(markerValue);
      this._nonNormalizedCog.x += cellWithLocation.loc.x * markerValue;
      this._nonNormalizedCog.y += cellWithLocation.loc.y * markerValue;
      this._total += markerValue;
@@ -360,7 +348,6 @@ window.onload = () => {
       let cellWithLocationIterator = this._localCellIteratorGenerator(location);
       for(let cellWithLocation of cellWithLocationIterator) {
         for (let cogHelperKey in cogHelpers) {
-          // console.log(cogHelperKey);
           cogHelpers[cogHelperKey].update(cellWithLocation);
         }
         for (let destinationArrayKey in destinationArrays) {
@@ -370,9 +357,7 @@ window.onload = () => {
         }
       }
       for (let cogHelperKey in cogHelpers) {
-        // console.log(cogHelperKey);
-        // console.log(cogHelpers[cogHelperKey].getNormalizedCog());
-        features[cogHelperKey] = cogHelpers[cogHelperKey].getNormalizedCog();
+          features[cogHelperKey] = cogHelpers[cogHelperKey].getNormalizedCog();
       }
       for (let destinationArrayKey in destinationArrays) {
         features[destinationArrayKey] = destinationArrays[destinationArrayKey];
@@ -480,7 +465,7 @@ window.onload = () => {
       // this.headBack = false;
       this._carriedResource = 0;
       this._resourceCarryingCapacity = 0.02;
-      this._homeMemory = 0.02;
+      this._homeMemory = 0.2;
     }
 
     _angleTo(target) {
@@ -554,9 +539,10 @@ window.onload = () => {
 
     _upGradientDirection(centerOfGravity) {
       const threshold = this._terrain._cellSize; // hack for now
-      if (Math.hypot(location.x - centerOfGravity.x,
-                     location.y - centerOfGravity.y) > threshold) {
-        return this._angleTo(location, centerOfGravity);
+      if (Math.hypot(this._loc.x - centerOfGravity.x,
+                     this._loc.y - centerOfGravity.y) > threshold) {
+        let direction = this._angleTo(centerOfGravity);
+        return direction;
       } else {
         return null;
       }
@@ -625,8 +611,6 @@ window.onload = () => {
             // Cannot see resource, so let's try smelling for some ...
             let directionUpResourceMarkerGradient =
                 this._upGradientDirection(features.resourceMarker);
-                // console.log(this.resourceMarker);
-                // console.log(directionUpResourceMarkerGradient);
             if (directionUpResourceMarkerGradient) {
               this._direction = directionUpResourceMarkerGradient;
             } else {
