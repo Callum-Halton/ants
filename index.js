@@ -104,11 +104,11 @@ window.onload = () => {
 
     _forget() {
       this.resourceMarker *= 0.99;
-      if (this.resourceMarker < 0.05) {
+      if (this.resourceMarker < 0.01) {
         this.resourceMarker = 0;
       }
       this.homeMarker *= 0.99;
-      if (this.homeMarker < 0.05) {
+      if (this.homeMarker < 0.01) {
         this.homeMarker = 0;
       }
     }
@@ -120,13 +120,17 @@ window.onload = () => {
       let end_y = location.y + cellSize;
       if (this.home) {
         ctx.fillStyle = "#FFFF00";
-      } else if (!hideDebug && this.debug) {
-        ctx.fillStyle = "#00FF00";
+      // } else if (!hideDebug && this.debug) {
+      //   ctx.fillStyle = "#00FF00";
       } else if (this.resource) {
-          ctx.fillStyle = colorString([(1 - this.resource) * 255, (1 - this.resource) * 255, 255]);
+        ctx.fillStyle = colorString([(1 - this.resource) * 255,
+                                     (1 - this.resource) * 255,
+                                     255]);
       } else {
         // The following calculation slows down rendering!
-        ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255, 255, (1 - this.homeMarker) * 255]);
+        ctx.fillStyle = colorString([(1 - this.resourceMarker) * 255,
+                                     255,
+                                     (1 - this.homeMarker) * 255]);
       }
       // } else {
       //   ctx.fillStyle = 'white';
@@ -657,7 +661,7 @@ window.onload = () => {
     _dropMarkers() {
       // Should we only drop resource marker once carrying capacity is full?
       this._terrain.increaseMarker(this._loc, this._resourceMemory, "resourceMarker");
-      this._resourceMemory *= 0.995;
+      this._resourceMemory *= 0.99;
       this._terrain.increaseMarker(this._loc, this._homeMemory, "homeMarker");
       this._homeMemory *= 0.99;
       /*
