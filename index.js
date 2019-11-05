@@ -1,6 +1,7 @@
 var hideDebug = true;
 var stopAnimation = false;
 var MORERESOURCE = false;
+var test = false;
 
 function keydown(event) {
   if (event.key == "a") {
@@ -9,6 +10,8 @@ function keydown(event) {
     stopAnimation = true;
   } else if (event.key == "r") {
     MORERESOURCE = true;
+  } else if (event.key == "t") {
+    test = true;
   }
 }
 
@@ -104,18 +107,16 @@ window.onload = () => {
 
     _forget() {
       this.resourceMarker *= 0.99;
-      if (this.resourceMarker < 0.01) {
+      if (this.resourceMarker < terrain.minimumMarkerIntensities.resourceMarker) {
         this.resourceMarker = 0;
       }
-      this.homeMarker *= 0.99;
-      if (this.homeMarker < 0.01) {
+      this.homeMarker *= 0.996;
+      if (this.homeMarker < terrain.minimumMarkerIntensities.homeMarker) {
         this.homeMarker = 0;
       }
     }
 
     draw(location, cellSize) {
-      this._forget();
-
       let end_x = location.x + cellSize;
       let end_y = location.y + cellSize;
       let circle = false;
@@ -133,9 +134,12 @@ window.onload = () => {
                                      255,
                                      (1 - this.homeMarker) * 255]);
       }
-      // } else {
-      //   ctx.fillStyle = 'white';
-      // }
+
+      // debugging to show any trace marker amounts
+      if (this.resourceMarker) {
+        ctx.fillStyle = "#000000";
+      }
+
       ctx.fillRect(location.x, location.y, end_x, end_y);
       if (circle) {
         ctx.fillStyle = "#000000";
@@ -143,6 +147,8 @@ window.onload = () => {
         ctx.arc(location.x + cellSize/2, location.y + cellSize / 2, 5, 0, 2 * Math.PI);
         ctx.fill();
       }
+      
+      this._forget();
     }
   }
 
@@ -206,10 +212,12 @@ window.onload = () => {
     // Constructs a terrain of size width and height, consisting of square
     // cells which are of size cellSize on a side.
     constructor(width, height, homeLocation, cellSize, resources) {
-      this._maximumMarkerIntensities = {
-        resourceMarker: 1,
-        homeMarker: 1
-      };
+
+      this.minimumMarkerIntensities = {
+        resourceMarker: 0.01,
+        homeMarker: 0.01
+      }; 
+
       this._width = width;
       this._height = height;
       this._homeLocation = homeLocation;
@@ -259,9 +267,9 @@ window.onload = () => {
 
     increaseMarker(location, amount, markerType) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
-      if (this._grid[cellLoc.row][cellLoc.col][markerType] <= this._maximumMarkerIntensities[markerType]) {
-        this._grid[cellLoc.row][cellLoc.col][markerType] += amount;
-      }
+      // if (this._grid[cellLoc.row][cellLoc.col][markerType] <= this._maximumMarkerIntensities[markerType]) {
+      this._grid[cellLoc.row][cellLoc.col][markerType] += amount;
+      // }
     }
 
     increaseResource(location, value) {
@@ -375,10 +383,6 @@ window.onload = () => {
       }
     }
 
-    // Returns angle in degrees of steepest upward slope of home marger
-    // gradient in range. Returns null if the terrain is flat.
-    localHomeMarkerGradient(location, range) {
-    }
 
     // Returns "left", "straight", or "right" depending on whether there is
     // a barrier within range in the direction of travel and whether turning
@@ -424,9 +428,9 @@ window.onload = () => {
       this._update();
 
       // Cells
-      var y = 0;
+      let y = 0;
       for (let row = 0; row < this._heightInCells; row++) {
-        var x = 0;
+        let x = 0;
         for (let col = 0; col < this._widthInCells; col++) {
           let location = new Point(x, y);
           let cell = this._grid[row][col];
@@ -435,7 +439,6 @@ window.onload = () => {
         }
         y = y + this._cellSize;
       }
-
       // Grid
       ctx.strokeStyle = "#F8F8F8";
       for (let lineX = this._cellSize; lineX < this._width; lineX += this._cellSize) {
@@ -472,8 +475,6 @@ window.onload = () => {
       this._vision = vision;
       this._agitated = 0.01;
       this._resourceMemory = 0;
-      // this._full = false;
-      // this.headBack = false;
       this._carriedResource = 0;
       this._resourceCarryingCapacity = 0.02;
       this._homeMemory = 0.2;
@@ -484,6 +485,7 @@ window.onload = () => {
       Remember that the x-axis increases left-to-right, but the y-axis
       increases top-to-bottom. So angle increases clockwise.
       */
+
       let dx = target.x - this._loc.x; // x-component of vector pointing at target
       let dy = target.y - this._loc.y; // y-component of vector pointing at target
       let angle = MyMath.atan(dy/dx);
@@ -598,7 +600,6 @@ window.onload = () => {
       by this agent. Luckily, this is only temporary as we move to using the
       Terrain class to store the resource information.
       */
-
       let remainingCapacity = this._resourceCarryingCapacity - this._carriedResource;
       if (remainingCapacity) { // head for resource
         // First, try to consume resource
@@ -606,17 +607,30 @@ window.onload = () => {
         let removedResource = this._terrain.removeResource(this._loc,
                                                            remainingCapacity);
         this._carriedResource += removedResource;
-        if (removedResource == 0) {
+        if (this._carriedResource === this._resourceCarryingCapacity) {
+          this._resourceMemory = this._resourceCarryingCapacity;
+          this._cRender = colorString([0, 255, 0]);
+        } else if (removedResource == 0) {
           // There ain't no resource here, so let's look for some ...
           let features = {
             resource: null,
             resourceMarker: null
-          }
-          this._terrain.getLocalFeatures(this._loc, features)
+          };
+          this._terrain.getLocalFeatures(this._loc, features);
           if (features.resource.length > 0) {
             // Can see resource, so move towards it
-            // The following can be improved to go for nearest / best
-            this._direction = this._angleTo(features.resource[0]);
+            let closestResource = {loc: null, dist: this._vision + 10};
+            features.resource.forEach(resourceLoc => {
+              let distanceToResource = Math.hypot(resourceLoc.x - this._loc.x,
+                                                  resourceLoc.y - this._loc.y);
+              if (distanceToResource < closestResource.dist) {
+                closestResource = {loc: resourceLoc, dist: distanceToResource};
+              }
+            });
+            if (closestResource.loc === null) {
+              closestResource.loc = features.resource[0];
+            }
+            this._direction = this._angleTo(closestResource.loc);
           } else {
             // Cannot see resource, so let's try smelling for some ...
             let directionUpResourceMarkerGradient =
@@ -632,14 +646,11 @@ window.onload = () => {
           }
         }
       } else { // head for home
-        this._resourceMemory = this._carriedResource;
         // COMPLETE THIS SECTION
-        this._cRender = colorString([0, 255, 0]);
         if (Math.random() < this._agitated) {
           this._direction = Math.random() * 360;
         }
       }
-
       /*
       Note that the following bounce mechanism can get caught in a high
       frequency oscillation at the edges of the screen. This is because
@@ -666,11 +677,20 @@ window.onload = () => {
     }
 
     _dropMarkers() {
-      // Should we only drop resource marker once carrying capacity is full?
-      this._terrain.increaseMarker(this._loc, this._resourceMemory, "resourceMarker");
-      this._resourceMemory *= 0.99;
-      this._terrain.increaseMarker(this._loc, this._homeMemory, "homeMarker");
-      this._homeMemory *= 0.99;
+      if (this._resourceMemory) {
+        this._terrain.increaseMarker(this._loc, this._resourceMemory, "resourceMarker");
+        this._resourceMemory *= 0.999;
+        if (this._resourceMemory < this._terrain.minimumMarkerIntensities.resourceMarker) {
+          this._resourceMemory = 0;
+        }
+      }
+      if (this._homeMemory) {
+        this._terrain.increaseMarker(this._loc, this._homeMemory, "homeMarker");
+        this._homeMemory *= 0.999;
+        if (this._homeMemory < this._terrain.minimumMarkerIntensities.homeMemory) {
+          this._homeMemory = 0;
+        }
+      }
       /*
       Periodically drop some marker at the current location based on
       the size of the resource seen and how long ago it was seen
@@ -732,7 +752,7 @@ window.onload = () => {
   var fps;
 
   function showFps() {
-    ctx.fillStyle = "#000000"
+    ctx.fillStyle = "#000000";
     ctx.font = "30px Courier";
     const xPos = WIDTH-240;
     ctx.fillText(terrain.getAgentsCount() + " AGENTS", xPos, HEIGHT-50);
@@ -744,7 +764,7 @@ window.onload = () => {
   function showNotice() {
     if (framesLeftToShowNotice > 0) {
       framesLeftToShowNotice -= 1;
-      ctx.fillStyle = "#000000"
+      ctx.fillStyle = "#000000";
       ctx.font = "30px Courier";
       const xPos = WIDTH / 2 - 150;
       const yPos = HEIGHT / 2 - 20;
@@ -774,4 +794,4 @@ window.onload = () => {
 
   refreshLoop();
 
-}
+};
