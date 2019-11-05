@@ -188,14 +188,6 @@ window.onload = () => {
     }
   }
 
-  /*
-  var signalEnum = {
-    RESOURCE: 1,
-    RESOURCE_MARKER: 2, // empty trash later
-    HOME: 3,
-    HOME_MARKER: 4
-  };
-  */
   class Terrain {
     /*
     If we store the pheromone markers using independent objects then we
@@ -608,6 +600,7 @@ window.onload = () => {
                                                            remainingCapacity);
         this._carriedResource += removedResource;
         if (this._carriedResource === this._resourceCarryingCapacity) {
+          // Just got full
           this._resourceMemory = this._resourceCarryingCapacity;
           this._cRender = colorString([0, 255, 0]);
         } else if (removedResource == 0) {
