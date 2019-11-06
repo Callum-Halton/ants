@@ -27,7 +27,7 @@ window.onload = () => {
   const WIDTH = 1000; //window.innerWidth;
   const HEIGHT = 1000; //window.innerHeight;
   const GRID_SIZE = 20;
-  const MAX_AGENTS = 1000;
+  const MAX_AGENTS = 200;
   const FREEZE = false;
   const canvas = document.getElementById('canva');
   canvas.addEventListener('click', (event) => {canvasClick(event)}, false);
@@ -106,11 +106,12 @@ window.onload = () => {
     }
 
     _forget() {
-      this.resourceMarker *= 0.99;
+      // these forget rates MUST BE SLOWER THAT THE AGENTS FORGET RATE
+      this.resourceMarker *= 0.997;
       if (this.resourceMarker < terrain.minimumMarkerIntensities.resourceMarker) {
         this.resourceMarker = 0;
       }
-      this.homeMarker *= 0.996;
+      this.homeMarker *= 0.997;
       if (this.homeMarker < terrain.minimumMarkerIntensities.homeMarker) {
         this.homeMarker = 0;
       }
@@ -136,8 +137,8 @@ window.onload = () => {
       }
 
       // debugging to show any trace marker amounts
-      if (this.resourceMarker) {
-        ctx.fillStyle = "#000000";
+      if (this.homeMarker) {
+        //ctx.fillStyle = "#000000";
       }
 
       ctx.fillRect(location.x, location.y, end_x, end_y);
@@ -284,10 +285,9 @@ window.onload = () => {
     removeResource(location, targetAmount) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
       let cell = this._grid[cellLoc.row][cellLoc.col];
-      let resourceAvailable = cell.resource;
       let amountRemoved;
-      if (resourceAvailable <= targetAmount) {
-        amountRemoved = resourceAvailable;
+      if (cell.resource <= targetAmount) {
+        amountRemoved = cell.resource;
       } else {
         amountRemoved = targetAmount;
       }
@@ -295,21 +295,9 @@ window.onload = () => {
       return amountRemoved;
     }
 
-    // Drops the specified amount of resource marker in the cell that
-    // location falls into.
-    /*addResourceMarker(location, amount) {
+    getFeatureValueHere(location, feature) {
       let cellLoc = pointToCellLoc(location, this._cellSize);
-      this._grid[cellLoc.row][cellLoc.col].resourceMarker += amount;
-    }*/
-
-    // Drops the specified amount of home marker in the cell that location
-    // falls into.
-    addHomeMarker(location, amount) {
-    }
-
-    // Returns angle in degrees to resource within range; null if no
-    // resource in range.
-    visibleResourceDirection(location, range) {
+      return this._grid[cellLoc.row][cellLoc.col][feature];
     }
 
     * _localCellIteratorGenerator(/* Point */ location) {
@@ -553,10 +541,15 @@ window.onload = () => {
       }
     }
 
+    _wanderAimlessly() {
+      if (Math.random() < this._agitated) {
+        this._direction = Math.random() * 360;
+      } // else just keep on truckin' in the same direction
+    }
+
     _changeDirection() {
       /*
-      Currently, this method is very primitive. Below is a pseudo-code
-      plan, or vision, for it:
+      Below is a pseudo-code plan for the method:
 
       if not full
         if can see resource then
@@ -579,19 +572,10 @@ window.onload = () => {
           change direction probabilistically based on time since last
           change plus other factors.
 
-      To make behavior more natural, it might make sense to change
+      * To make behavior more natural, it might make sense to change
       direction by no more than a fixed amount on each step.
-
-      It may be interesting to see how well the system works without the
-      agents even being able to see resources or home, but get steered
-      only by the markers.
       */
 
-      /*
-      Note that is it's really dodgy that resource is being referenced directly
-      by this agent. Luckily, this is only temporary as we move to using the
-      Terrain class to store the resource information.
-      */
       let remainingCapacity = this._resourceCarryingCapacity - this._carriedResource;
       if (remainingCapacity) { // head for resource
         // First, try to consume resource
@@ -601,8 +585,8 @@ window.onload = () => {
         this._carriedResource += removedResource;
         if (this._carriedResource === this._resourceCarryingCapacity) {
           // Just got full
-          this._resourceMemory = this._resourceCarryingCapacity;
-          this._cRender = colorString([0, 255, 0]);
+          this._resourceMemory = this._carriedResource;
+          this._cRender = "rgb(0, 255, 0)";
         } else if (removedResource == 0) {
           // There ain't no resource here, so let's look for some ...
           let features = {
@@ -632,16 +616,38 @@ window.onload = () => {
               this._direction = directionUpResourceMarkerGradient;
             } else {
               // Cannot smell resource, so let's just wander around aimlessly
-              if (Math.random() < this._agitated) {
-                this._direction = Math.random() * 360;
-              } // else just keep on truckin' in the same direction
+              this._wanderAimlessly();
             }
           }
         }
       } else { // head for home
-        // COMPLETE THIS SECTION
-        if (Math.random() < this._agitated) {
-          this._direction = Math.random() * 360;
+        // Is this home? ...
+        if (this._terrain.getFeatureValueHere(this._loc,"home")) {
+          this._carriedResource = 0;
+          this._cRender = "rgb(0, 100, 100)";
+          console.log(this._cRender);
+          this._homeMemory = 0.2;
+        } else {
+          //Let's look for home ...
+          let features = {
+            home: null,
+            homeMarker: null
+          };
+          this._terrain.getLocalFeatures(this._loc, features);
+          if (features.home.length > 0) {
+            // Can see home, so move towards it
+            this._direction = this._angleTo(features.home[0]);
+          } else {
+            // Cannot see home, so let's try smelling for it ...
+            let directionUpHomeMarkerGradient =
+                this._upGradientDirection(features.homeMarker);
+            if (directionUpHomeMarkerGradient) {
+              this._direction = directionUpHomeMarkerGradient;
+            } else {
+              // Cannot smell home, so let's just wander around aimlessly
+              this._wanderAimlessly();
+            }
+          }
         }
       }
       /*
@@ -672,15 +678,15 @@ window.onload = () => {
     _dropMarkers() {
       if (this._resourceMemory) {
         this._terrain.increaseMarker(this._loc, this._resourceMemory, "resourceMarker");
-        this._resourceMemory *= 0.999;
+        this._resourceMemory *= 0.995;
         if (this._resourceMemory < this._terrain.minimumMarkerIntensities.resourceMarker) {
           this._resourceMemory = 0;
         }
       }
       if (this._homeMemory) {
         this._terrain.increaseMarker(this._loc, this._homeMemory, "homeMarker");
-        this._homeMemory *= 0.999;
-        if (this._homeMemory < this._terrain.minimumMarkerIntensities.homeMemory) {
+        this._homeMemory *= 0.995;
+        if (this._homeMemory < this._terrain.minimumMarkerIntensities.homeMarker) {
           this._homeMemory = 0;
         }
       }
