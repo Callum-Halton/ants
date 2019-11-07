@@ -1,7 +1,7 @@
 var hideDebug = true;
 var stopAnimation = false;
 var MORERESOURCE = false;
-var test = false;
+var testMode = false;
 
 function keydown(event) {
   if (event.key == "a") {
@@ -11,7 +11,7 @@ function keydown(event) {
   } else if (event.key == "r") {
     MORERESOURCE = true;
   } else if (event.key == "t") {
-    test = true;
+    testMode = true;
   }
 }
 
@@ -772,25 +772,64 @@ window.onload = () => {
   }
 
   function refreshLoop() {
-    window.requestAnimationFrame(function() {
-      // ctx.fillStyle = 'white';
-      // ctx.fillRect(0, 0, WIDTH, HEIGHT);
-      terrain.draw();
-      // resource.draw();
-      showFps();
-      showNotice();
-      const now = performance.now();
-      while (times.length > 0 && times[0] <= now - 1000) {
-        times.shift();
-      }
-      times.push(now);
-      fps = times.length;
-      if (!stopAnimation) {
-        refreshLoop();
-      }
-    });
+    if (testMode) {
+      test = new Test();
+      test.runAll();
+    } else {
+      window.requestAnimationFrame(function() {
+        terrain.draw();
+        showFps();
+        showNotice();
+        const now = performance.now();
+        while (times.length > 0 && times[0] <= now - 1000) {
+          times.shift();
+        }
+        times.push(now);
+        fps = times.length;
+        if (!stopAnimation) {
+          refreshLoop();
+        }
+      });
+    }
   }
 
   refreshLoop();
+
+  class Test {
+    constructor() {
+      this._assertionFailCount = 0;
+      this._assertionPassCount = 0;
+    }
+
+    _assertEqual(a, b) {
+      if (a != b) {
+        this._assertionFailCount += 1;
+      } else {
+        this._assertionPassCount += 1;
+      }
+    }
+
+    _testPoint() {
+      let p = new Point(25, 300);
+      this._assertEqual(p.x, 25);
+      this._assertEqual(p.y, 300);
+    }
+
+    _testCellLoc() {
+      let c = new CellLoc(60, 22);
+      this._assertEqual(c.row, 60);
+      this._assertEqual(c.col, 22);
+    }
+
+    runAll() {
+      console.log("Runing all tests");
+      this._testPoint();
+      this._testCellLoc();
+      let totalAssertions = this._assertionFailCount + this._assertionPassCount;
+      console.log("Total assertions: " + totalAssertions);
+      console.log("Total failed assertions: " + this._assertionFailCount);
+      console.log("Total passed assertions: " + this._assertionPassCount);
+    }
+  }
 
 };
