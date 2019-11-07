@@ -821,10 +821,26 @@ window.onload = () => {
       this._assertEqual(c.col, 22);
     }
 
+    _testPointToCellLoc() {
+      let p = new Point(150, 223);
+      let c = pointToCellLoc(p, 26);
+      this._assertEqual(c.row, 8);
+      this._assertEqual(c.col, 5);
+      p = new Point(30, 20);
+      c = pointToCellLoc(p, 10);
+      this._assertEqual(c.row, 2);
+      this._assertEqual(c.col, 3);
+      p = new Point(29, 19);
+      c = pointToCellLoc(p, 10);
+      this._assertEqual(c.row, 1);
+      this._assertEqual(c.col, 2);
+    }
+
     runAll() {
       console.log("Runing all tests");
       this._testPoint();
       this._testCellLoc();
+      this._testPointToCellLoc();
       let totalAssertions = this._assertionFailCount + this._assertionPassCount;
       console.log("Total assertions: " + totalAssertions);
       console.log("Total failed assertions: " + this._assertionFailCount);
