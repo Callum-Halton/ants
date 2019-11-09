@@ -138,7 +138,7 @@ window.onload = () => {
 
       // debugging to show any trace marker amounts
       if (this.homeMarker) {
-        //ctx.fillStyle = "#000000";
+        // ctx.fillStyle = "#000000";
       }
 
       ctx.fillRect(location.x, location.y, end_x, end_y);
@@ -802,7 +802,7 @@ window.onload = () => {
     }
 
     _assertEqual(a, b) {
-      if (a != b) {
+      if (a !== b) {
         this._assertionFailCount += 1;
       } else {
         this._assertionPassCount += 1;
@@ -836,11 +836,15 @@ window.onload = () => {
       this._assertEqual(c.col, 2);
     }
 
+    _testLine() {
+    }
+
     runAll() {
       console.log("Runing all tests");
       this._testPoint();
       this._testCellLoc();
       this._testPointToCellLoc();
+      this._testLine();
       let totalAssertions = this._assertionFailCount + this._assertionPassCount;
       console.log("Total assertions: " + totalAssertions);
       console.log("Total failed assertions: " + this._assertionFailCount);
