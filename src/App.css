@@ -1,0 +1,38 @@
+/*
+.app {
+  text-align: left;
+}
+*/
+
+/*
+.display {
+  float: left;
+  width: 90%;
+}
+.controls {
+  float: left;
+  width: 10%;
+}
+*/
+
+/*
+.toggle-frozen-button {
+  width: 100px;
+  height: 80px;
+  font-family: Helvetica;
+  font-size: 20px;
+  background-color: cyan;
+  border: none;
+  border-radius: 20px;
+}
+.toogle-frozen-button:focus {
+  outline: none;
+  background-color: turquoise;
+  
+}
+*/
+
+.canvas {
+  width: 100%;
+  height: auto;
+}
