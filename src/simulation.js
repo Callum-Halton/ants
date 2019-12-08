@@ -1,8 +1,9 @@
-
 import React from 'react';
+import Controls from './controls'
 import Terrain from './simulation_framework'
 
 class PureCanvas extends React.Component {
+
   shouldComponentUpdate() {
     return false;
   }
@@ -11,9 +12,9 @@ class PureCanvas extends React.Component {
     return (
       <canvas
         className="canvas"
+        onClick={(event) => this.props.canvasClick(event.nativeEvent)}
         width={this.props.width}
         height={this.props.height}
-        // (node) => { return (node ? callback(node.getContext('2d')) : null); }
         ref={node =>
           node ? this.props.contextRef(node.getContext('2d')) : null
         }
@@ -25,12 +26,21 @@ class PureCanvas extends React.Component {
 export default class Simulation extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      width: 1000,
+      height: 1000,
+      frozen: true,
+      activePaletteFeature: "homeMarker",
+      paletteFeatureAmount: 0.1,
+    };
     this.saveContext = this.saveContext.bind(this);
     this.updateAnimationState = this.updateAnimationState.bind(this);
-    this.terrain = new Terrain(this.props.width, this.props.height);
-    this.state = {
-      angle: 0,
-    };
+    this.canvasClick = this.canvasClick.bind(this);
+    this.terrain = new Terrain(this.state.width, this.state.height);
+    this.toggleSimulationFrozen = this.toggleSimulationFrozen.bind(this);
+    this.selectPaletteFeature = this.selectPaletteFeature.bind(this);
+    this.selectPaletteFeatureAmount = this.selectPaletteFeatureAmount.bind(this);
+    this.paletteFeatures = ["resource", "resourceMarker", "homeMarker"];
   }
   
   componentDidMount() {
@@ -40,15 +50,15 @@ export default class Simulation extends React.Component {
   updateAnimationState() {
     // pass in one parameter and return object literal
     this.setState(prevState => ({angle: prevState.angle + 1 }));
-    if (!this.props.frozen) {
-      this.terrain.draw(this.ctx);
-    }
+    this.terrain.draw(this.ctx, this.state.frozen);
     this.rAF = requestAnimationFrame(this.updateAnimationState);
   }
 
-  /* componentWillUnmount() {
+  // Duncan commented this back in. I think it's important for when we hide
+  // the simulation, or don't render it for some reason.
+  componentWillUnmount() {
     cancelAnimationFrame(this.rAF);
-  } */
+  }
 
   saveContext(ctx) {
     this.ctx = ctx;
@@ -56,16 +66,58 @@ export default class Simulation extends React.Component {
     this.height = this.ctx.canvas.height;
   }
 
-  /*
-  componentDidUpdate() {
+  toggleSimulationFrozen() {
+    this.setState((prevState) => ({
+      frozen: !prevState.frozen,
+    }));
   }
-  */
+
+  selectPaletteFeature(feature) {
+    this.setState({
+      activePaletteFeature: feature,
+    });
+  }
+
+  selectPaletteFeatureAmount(amount) {
+    this.setState({
+      paletteFeatureAmount: amount,
+    });
+  }
+
+  // componentDidUpdate() { }
+
+  canvasClick(nativeEvent) {
+    let clickPoint = {};
+    clickPoint.x = nativeEvent.offsetX;
+    clickPoint.y = nativeEvent.offsetY;
+    this.ctx.fillStyle = "white"; this.ctx.beginPath(); this.ctx.arc(clickPoint.x, clickPoint.y, 3, 0, Math.PI * 2); this.ctx.fill();
+    this.terrain.changeFeature(clickPoint, this.state.activePaletteFeature,
+                               this.state.paletteFeatureAmount);
+  }
   
   render() {
-    return <PureCanvas 
-      width={this.props.width}
-      height={this.props.height}
-      contextRef={this.saveContext} 
-    />;
+    return (
+      <div className="row">
+        <div className="col-11">
+          <PureCanvas
+            canvasClick={this.canvasClick}
+            width={this.state.width}
+            height={this.state.height}
+            contextRef={this.saveContext}
+          />;
+        </div>
+        <div className="col-1">
+          <Controls
+            toggleSimulationFrozen={this.toggleSimulationFrozen}
+            frozen={this.state.frozen}
+            selectPaletteFeature={this.selectPaletteFeature}
+            activePaletteFeature={this.state.activePaletteFeature}
+            paletteFeatures={this.paletteFeatures}
+            selectPaletteFeatureAmount={this.selectPaletteFeatureAmount}
+            paletteFeatureAmount={this.state.paletteFeatureAmount}
+          />
+        </div>
+      </div>
+    );
   }
 }

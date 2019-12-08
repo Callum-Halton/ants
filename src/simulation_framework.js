@@ -4,21 +4,21 @@ var MORERESOURCE = false;
 var testMode = false;
 
 function keydown(event) {
-  if (event.key == "a") {
+  if (event.key === "a") {
     hideDebug = false;
-  } else if (event.key == "s") {
+  } else if (event.key === "s") {
     stopAnimation = true;
-  } else if (event.key == "r") {
+  } else if (event.key === "r") {
     MORERESOURCE = true;
-  } else if (event.key == "t") {
+  } else if (event.key === "t") {
     testMode = true;
   }
 }
 
 function keyup(event) {
-  if (event.key == "a") {
+  if (event.key === "a") {
     hideDebug = true;
-  } else if (event.key == "r") {
+  } else if (event.key === "r") {
     MORERESOURCE = false;
   }
 }
@@ -27,27 +27,12 @@ function keyup(event) {
 // const HEIGHT = 1000; //window.innerHeight;
 const GRID_SIZE = 20;
 const MAX_AGENTS = 200;
-const FREEZE = false;
+// const FREEZE = false;
 // const canvas = document.getElementById('canva');
 // canvas.addEventListener('click', (event) => {canvasClick(event)}, false);
 // canvas.width = WIDTH;
 // canvas.height = HEIGHT;
 // const ctx = canvas.getContext('2d');
-
-
-/*
-function canvasClick(event) {
-  let x = event.pageX - canvas.offsetLeft;
-  let y = event.pageY - canvas.offsetTop;
-  let location = new Point(x, y);
-  // terrain.increaseResourceMarker(location, 0.1);
-  if (MORERESOURCE) {
-    terrain.increaseResource(location, 0.1);
-  } else {
-    terrain.increaseMarker(location, 0.1, "resourceMarker");
-  }
-}
-*/
 
 class MyMath {
   static sin(angle) {
@@ -217,17 +202,13 @@ export default class Terrain {
 
     // This is temporarily here so that we don't need to pass these in as
     // constructor parameters
-    let homeLocation;
-    if (FREEZE) {
-      homeLocation = new Point(510, 510);
-    } else {
-      homeLocation = new Point(Math.random() * (this.width - 100) + 50, Math.random() * (this.height - 100) + 50);
-    }
+
+    let homeLocation = new Point(Math.random() * (this.width - 100) + 50, Math.random() * (this.height - 100) + 50);
+
     const resources = [
       {loc: new CellLoc(5, 5), amount: 1.0}
     ];
 
-    
     this._homeLocation = homeLocation;
     this._cellSize = GRID_SIZE;
     this._widthInCells = Math.ceil(this.width/this._cellSize);
@@ -268,7 +249,7 @@ export default class Terrain {
           break;
         }
       }
-      if (bounds.length != row + 1) {
+      if (bounds.length !== row + 1) {
           bounds.push(cellRad + 1);
       }
     }
@@ -279,16 +260,11 @@ export default class Terrain {
     return this._agents.length;
   }
 
-  increaseMarker(location, amount, markerType) {
+  changeFeature(location, feature, amount) {
     let cellLoc = this.pointToCellLoc(location, this._cellSize);
     // if (this._grid[cellLoc.row][cellLoc.col][markerType] <= this._maximumMarkerIntensities[markerType]) {
-    this._grid[cellLoc.row][cellLoc.col][markerType] += amount;
+    this._grid[cellLoc.row][cellLoc.col][feature] += amount;
     // }
-  }
-
-  increaseResource(location, value) {
-    let cellLoc = this.pointToCellLoc(location, this._cellSize);
-    this._grid[cellLoc.row][cellLoc.col].resource += value;
   }
 
   // Add a barrier the occupies all the cells that line passes through
@@ -409,13 +385,13 @@ export default class Terrain {
   }
   */
 
-  _update() {
-    if (FREEZE) {
+  _update(agentsFrozen) {
+    if (agentsFrozen) {
       if (this._agents.length < 1) {
         this._spawnAgentAtHome();
       }
     } else if (this._agents.length < MAX_AGENTS) {
-      if (this._spawnCountdown == 0) {
+      if (this._spawnCountdown === 0) {
         this._spawnAgentAtHome();
         this._spawnCountdown = Math.floor(
             Math.random() * this._meanStepsBetweenSpawns * 2);
@@ -425,8 +401,8 @@ export default class Terrain {
     }
   }
 
-  draw(ctx) {
-    this._update();
+  draw(ctx, agentsFrozen) {
+    this._update(agentsFrozen);
 
     // Cells
     let y = 0;
@@ -440,24 +416,25 @@ export default class Terrain {
       }
       y = y + this._cellSize;
     }
+
     // Grid
     ctx.strokeStyle = "#F8F8F8";
-    for (let lineX = this._cellSize; lineX < this._width; lineX += this._cellSize) {
+    for (let lineX = this._cellSize; lineX < this.width; lineX += this._cellSize) {
       ctx.beginPath();
       ctx.moveTo(lineX, 0);
-      ctx.lineTo(lineX, this._height);
+      ctx.lineTo(lineX, this.height);
       ctx.stroke();
     }
-    for (let lineY = this._cellSize; lineY < this._height; lineY += this._cellSize) {
+    for (let lineY = this._cellSize; lineY < this.height; lineY += this._cellSize) {
       ctx.beginPath();
       ctx.moveTo(0, lineY);
-      ctx.lineTo(this._width, lineY);
+      ctx.lineTo(this.width, lineY);
       ctx.stroke();
     }
 
     // Agents
     for (let i=0; i < this._agents.length; i++) {
-      this._agents[i].draw(ctx);
+      this._agents[i].draw(ctx, agentsFrozen);
     }
   }
 }
@@ -491,7 +468,7 @@ class Agent {
     let dy = target.y - this._loc.y; // y-component of vector pointing at target
     let angle = MyMath.atan(dy/dx);
 
-    if (dx == 0) {
+    if (dx === 0) {
       // Handle case where dy/dx is undefined.
       if (dy > 0) {
         // Target is below
@@ -607,8 +584,8 @@ class Agent {
       if (this._carriedResource === this._resourceCarryingCapacity) {
         // Just got full
         this._resourceMemory = this._carriedResource;
-        this._cRender = "rgb(0, 255, 0)";
-      } else if (removedResource == 0) {
+        this._cRender = "rgb(255, 0, 0)";
+      } else if (removedResource === 0) {
         // There ain't no resource here, so let's look for some ...
         let features = {
           resource: null,
@@ -697,14 +674,14 @@ class Agent {
 
   _dropMarkers() {
     if (this._resourceMemory) {
-      this._terrain.increaseMarker(this._loc, this._resourceMemory, "resourceMarker");
+      this._terrain.changeFeature(this._loc, "resourceMarker", this._resourceMemory);
       this._resourceMemory *= 0.995;
       if (this._resourceMemory < this._terrain.minimumMarkerIntensities.resourceMarker) {
         this._resourceMemory = 0;
       }
     }
     if (this._homeMemory) {
-      this._terrain.increaseMarker(this._loc, this._homeMemory, "homeMarker");
+      this._terrain.changeFeature(this._loc, "homeMarker", this._homeMemory);
       this._homeMemory *= 0.995;
       if (this._homeMemory < this._terrain.minimumMarkerIntensities.homeMarker) {
         this._homeMemory = 0;
@@ -724,15 +701,14 @@ class Agent {
 
   _update() {
     this._changeDirection();
-    if (!FREEZE) {
-      this._move();
-      this._dropMarkers();
-    }
+    this._move();
+    this._dropMarkers();
   }
 
-  draw(ctx) {
-    this._update();
-
+  draw(ctx, agentsFrozen) {
+    if (!agentsFrozen) {
+      this._update();
+    }
     ctx.fillStyle = this._cRender;
     ctx.beginPath();
     ctx.arc(this._loc.x, this._loc.y, this._radius, 0, Math.PI * 2);
@@ -744,13 +720,13 @@ class Agent {
     ctx.fillRect(0, 0, this._radius, this._radius);
     ctx.restore();
 
-    if (FREEZE) {
-      ctx.strokeStyle = this._cRender;
-      ctx.beginPath();
-      ctx.arc(this._loc.x, this._loc.y, this._vision, 0,
-              Math.PI * 2);
-      ctx.stroke();
-    }
+    /* VISION CIRCLE
+    ctx.strokeStyle = this._cRender;
+    ctx.beginPath();
+    ctx.arc(this._loc.x, this._loc.y, this._vision, 0,
+            Math.PI * 2);
+    ctx.stroke();
+    */
   }
 }
 

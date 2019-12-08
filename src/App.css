@@ -33,6 +33,12 @@
 */
 
 .canvas {
+  /* width: 100%; */
+  /* height: auto; */
+}
+
+/* TODO: Sort out bootsrap when resizing of window */
+.top-level {
+  display: table;
   width: 100%;
-  height: auto;
 }
