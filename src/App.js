@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import Simulation from './simulation.js';
+import Simulation from './simulation/simulation.js';
 
 export default class App extends React.Component {
   /*
