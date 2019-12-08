@@ -37,8 +37,18 @@
   /* height: auto; */
 }
 
-/* TODO: Sort out bootsrap when resizing of window */
-.top-level {
+/*
+The following, page and page-content settings, are necessary to make bootstrap
+play nicely with a fixed-width canvas element. For more on mixing fluid and
+fixed, which might be useful later, see:
+https://stackoverflow.com/questions/41914954/how-to-force-a-fixed-column-width-with-a-bootstrap-grid-and-keep-the-other-ones
+*/
+
+.page {
   display: table;
   width: 100%;
+}
+
+.page-content {
+  display: table-cell;
 }

@@ -11,8 +11,10 @@ export default class App extends React.Component {
 
   render() {
     return (
-      <div className="container top-level">
-        <Simulation />
+      <div className="page>">
+        <div className="page-content">
+          <Simulation />
+        </div>
       </div>
     );
   }

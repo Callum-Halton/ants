@@ -103,7 +103,7 @@ export default class Simulation extends React.Component {
   render() {
     return (
       <div className="row">
-        <div className="col-11">
+        <div className="col">
           <PureCanvas
             canvasClick={this.canvasClick}
             width={this.state.width}
@@ -111,7 +111,7 @@ export default class Simulation extends React.Component {
             contextRef={this.saveContext}
           />;
         </div>
-        <div className="col-1">
+        <div className="col">
           <Controls
             toggleSimulationFrozen={this.toggleSimulationFrozen}
             frozen={this.state.frozen}
