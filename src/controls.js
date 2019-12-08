@@ -18,6 +18,7 @@ export default function Controls(props) {
         width={200} height={50} color={[0, 100, 200]}
         background={[0, 200, 200]} 
       />
+      <ResetSimulation resetSimulation={props.resetSimulation}/>
     </div>
   );
 }
@@ -43,4 +44,9 @@ function SelectPaletteFeatureButtons(props) {
       {radioButtons}
     </div>
   );
+}
+
+function ResetSimulation(props) {
+  return (<button type="button" className={"btn btn-secondary"}
+          onClick={props.resetSimulation}> Reset </button>);
 }

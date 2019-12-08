@@ -188,27 +188,19 @@ export default class Terrain {
 
   // Constructs a terrain of size width and height, consisting of square
   // cells which are of size cellSize on a side.
-  // constructor(width, height, homeLocation, cellSize, resources) {
   constructor(width, height) {
-    
-    // This section is simulation props inheritance
     this.width = width;
     this.height = height;
-    
     this.minimumMarkerIntensities = {
       resourceMarker: 0.01,
       homeMarker: 0.01
-    }; 
+    };
+    this.reset();
+  }
 
-    // This is temporarily here so that we don't need to pass these in as
-    // constructor parameters
-
-    let homeLocation = new Point(Math.random() * (this.width - 100) + 50, Math.random() * (this.height - 100) + 50);
-
-    const resources = [
-      {loc: new CellLoc(5, 5), amount: 1.0}
-    ];
-
+  reset() {
+    let homeLocation = new Point(Math.random() * (this.width - 100) + 50,
+                                 Math.random() * (this.height - 100) + 50);
     this._homeLocation = homeLocation;
     this._cellSize = GRID_SIZE;
     this._widthInCells = Math.ceil(this.width/this._cellSize);
@@ -228,11 +220,12 @@ export default class Terrain {
     this._meanStepsBetweenSpawns = 10;
     this._spawnCountdown = 0;
     // Evolves resource implementation
+    const resources = [{loc: new CellLoc(5, 5), amount: 1.0}];
     for (let resource = 0; resource < resources.length; resource++) {
       this._grid[resources[resource].loc.row][resources[resource].loc.col].resource = resources[resource].amount;
     }
   }
-  
+
   pointToCellLoc(location, cellSize) {
     let col = Math.floor(location.x / cellSize);
     let row = Math.floor(location.y / cellSize);

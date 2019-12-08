@@ -40,6 +40,7 @@ export default class Simulation extends React.Component {
     this.toggleSimulationFrozen = this.toggleSimulationFrozen.bind(this);
     this.selectPaletteFeature = this.selectPaletteFeature.bind(this);
     this.selectPaletteFeatureAmount = this.selectPaletteFeatureAmount.bind(this);
+    this.resetSimulation = this.resetSimulation.bind(this);
     this.paletteFeatures = ["resource", "resourceMarker", "homeMarker"];
   }
   
@@ -95,6 +96,10 @@ export default class Simulation extends React.Component {
                                this.state.paletteFeatureAmount);
   }
   
+  resetSimulation() {
+    this.terrain.reset();
+  }
+
   render() {
     return (
       <div className="row">
@@ -115,6 +120,7 @@ export default class Simulation extends React.Component {
             paletteFeatures={this.paletteFeatures}
             selectPaletteFeatureAmount={this.selectPaletteFeatureAmount}
             paletteFeatureAmount={this.state.paletteFeatureAmount}
+            resetSimulation={this.resetSimulation}
           />
         </div>
       </div>
