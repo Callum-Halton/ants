@@ -1,6 +1,6 @@
 import React from 'react';
-import Controls from './controls'
-import Terrain from './simulation_framework'
+import Controls from './controls';
+import Terrain from './terrain.js';
 
 class PureCanvas extends React.Component {
 
