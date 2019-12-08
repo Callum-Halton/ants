@@ -109,20 +109,18 @@ export default class Simulation extends React.Component {
             width={this.state.width}
             height={this.state.height}
             contextRef={this.saveContext}
-          />;
-        </div>
-        <div className="col">
-          <Controls
-            toggleSimulationFrozen={this.toggleSimulationFrozen}
-            frozen={this.state.frozen}
-            selectPaletteFeature={this.selectPaletteFeature}
-            activePaletteFeature={this.state.activePaletteFeature}
-            paletteFeatures={this.paletteFeatures}
-            selectPaletteFeatureAmount={this.selectPaletteFeatureAmount}
-            paletteFeatureAmount={this.state.paletteFeatureAmount}
-            resetSimulation={this.resetSimulation}
           />
         </div>
+        <Controls
+          toggleSimulationFrozen={this.toggleSimulationFrozen}
+          frozen={this.state.frozen}
+          selectPaletteFeature={this.selectPaletteFeature}
+          activePaletteFeature={this.state.activePaletteFeature}
+          paletteFeatures={this.paletteFeatures}
+          selectPaletteFeatureAmount={this.selectPaletteFeatureAmount}
+          paletteFeatureAmount={this.state.paletteFeatureAmount}
+          resetSimulation={this.resetSimulation}
+        />
       </div>
     );
   }
