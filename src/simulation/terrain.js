@@ -1,11 +1,12 @@
-import Agent from './agent.js';
 import { MyMath, colorString, Point } from './utils.js';
+import Colony from './colony.js';
 
-var hideDebug = true;
-var stopAnimation = false;
-var MORERESOURCE = false;
-var testMode = false;
+//var hideDebug = true;
+//var stopAnimation = false;
+//var MORERESOURCE = false;
+//var testMode = false;
 
+/*
 function keydown(event) {
   if (event.key === "a") {
     hideDebug = false;
@@ -25,6 +26,7 @@ function keyup(event) {
     MORERESOURCE = false;
   }
 }
+*/
 
 // const WIDTH = 1000; //window.innerWidth;
 // const HEIGHT = 1000; //window.innerHeight;
@@ -108,7 +110,7 @@ class Cell {
       ctx.arc(location.x + cellSize/2, location.y + cellSize / 2, 5, 0, 2 * Math.PI);
       ctx.fill();
     }
-    
+
     this._forget();
   }
 }
@@ -150,18 +152,6 @@ class CogHelper {
 }
 
 export default class Terrain {
-  /*
-  If we store the pheromone markers using independent objects then we
-  would need to have each agent compare its location with every marker
-  object on every step. This would quickly cause the program to grind to
-  a halt because it requires n^2 computation complexity.
-
-  A solution is to have this terrain object that stores the information
-  that the agents interact with. It can store the information, such as the
-  locations of barriers, resources, and markers, in a spatially localized
-  way, which enables the agents to efficiently interact with the terrain.
-  */
-
   // Constructs a terrain of size width and height, consisting of square
   // cells which are of size cellSize on a side.
   constructor(width, height) {
@@ -175,9 +165,6 @@ export default class Terrain {
   }
 
   reset() {
-    let homeLocation = new Point(Math.random() * (this.width - 100) + 50,
-                                 Math.random() * (this.height - 100) + 50);
-    this._homeLocation = homeLocation;
     this._cellSize = GRID_SIZE;
     this._widthInCells = Math.ceil(this.width/this._cellSize);
     this._heightInCells = Math.ceil(this.height/this._cellSize);
@@ -188,13 +175,18 @@ export default class Terrain {
         this._grid[row][col] = new Cell(this);
       }
     }
-    let homeCellLoc = this.pointToCellLoc(this._homeLocation, this._cellSize);
-    this._grid[homeCellLoc.row][homeCellLoc.col].home = 1;
-    this._agents = [];
+
+    this._homeLocation = new Point(Math.random() * (this.width - 100) + 50,
+                                   Math.random() * (this.height - 100) + 50);
     this._agentsVision = this._cellSize * 10;
+
+    this.colonies = [];
+    let colony = new Colony(this, this._homeLocation, 0, [0,0,0], [0,200,200],
+      this._agentsVision, 1000, 100);
+    this.colonies.push(colony);
+
     this._localBounds = this._preCalcLocalBounds(this._agentsVision);
-    this._meanStepsBetweenSpawns = 10;
-    this._spawnCountdown = 0;
+
     // Evolves resource implementation
     const resources = [{loc: new CellLoc(5, 5), amount: 1.0}];
     for (let resource = 0; resource < resources.length; resource++) {
@@ -336,42 +328,12 @@ export default class Terrain {
   leastBlockedTurn(location, direction, range) {
   }
 
-  _spawnAgentAtHome() {
-    this._agents.push(new Agent(this, this._homeLocation, this._agentsVision));
-  }
+  _update() {
 
-  /*
-  _spawnColony() {
-    let numberOfAgents;
-    if (FREEZE) {
-      numberOfAgents = 1;
-    } else {
-      numberOfAgents = 100;
-    }
-    for (let i=0; i<numberOfAgents; i++) {
-      this._spawnAgentAtHome(i);
-    }
-  }
-  */
-
-  _update(agentsFrozen) {
-    if (agentsFrozen) {
-      if (this._agents.length < 1) {
-        this._spawnAgentAtHome();
-      }
-    } else if (this._agents.length < MAX_AGENTS) {
-      if (this._spawnCountdown === 0) {
-        this._spawnAgentAtHome();
-        this._spawnCountdown = Math.floor(
-            Math.random() * this._meanStepsBetweenSpawns * 2);
-      } else {
-        this._spawnCountdown -= 1;
-      }
-    }
   }
 
   draw(ctx, agentsFrozen) {
-    this._update(agentsFrozen);
+    this._update();
 
     // Cells
     let y = 0;
@@ -401,10 +363,10 @@ export default class Terrain {
       ctx.stroke();
     }
 
-    // Agents
-    for (let i=0; i < this._agents.length; i++) {
-      this._agents[i].draw(ctx, agentsFrozen);
+    for (let colony of this.colonies) {
+      colony.draw(ctx, agentsFrozen);
     }
+
   }
 }
 

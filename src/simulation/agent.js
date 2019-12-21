@@ -1,14 +1,15 @@
 import { MyMath, colorString, Point } from './utils.js';
 
 export default class Agent {
-  constructor(terrain, loc, vision) {
+  constructor(terrain, loc, vision, colonyID, homeColor, agentColor) {
     // The agent can interact with the terrain via the following object
     // reference.
     this._terrain = terrain;
     this._loc = new Point(loc.x, loc.y);
     this._radius = 6;
     this._direction = Math.random() * 360;
-    this._color = [0, 100, 100];
+    this._color = agentColor;
+    //console.log(a, "bye");
     this._cRender = colorString(this._color);
     this._speed = 3;
     this._vision = vision;
@@ -183,7 +184,7 @@ export default class Agent {
       // Is this home? ...
       if (this._terrain.getFeatureValueHere(this._loc,"home")) {
         this._carriedResource = 0;
-        this._cRender = "rgb(0, 100, 100)";
+        this._cRender = colorString(this._color);
         this._homeMemory = 0.2;
       } else {
         //Let's look for home ...
