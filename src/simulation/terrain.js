@@ -2,26 +2,18 @@ import { MyMath, colorString, Point } from './utils.js';
 import Colony from './colony.js';
 import { Cell, CellWithLocation, CellLoc } from './cell.js';
 
-//var hideDebug = true;
-//var MORERESOURCE = false;
 //var testMode = false;
 
 /*
 function keydown(event) {
-  if (event.key === "a") {
-    hideDebug = false;
-  } else if (event.key === "r") {
-    MORERESOURCE = true;
-  } else if (event.key === "t") {
+  if (event.key === "t") {
     testMode = true;
   }
 }
 
 function keyup(event) {
-  if (event.key === "a") {
-    hideDebug = true;
-  } else if (event.key === "r") {
-    MORERESOURCE = false;
+  if (event.key === "t") {
+    // do nothing
   }
 }
 */
