@@ -29,16 +29,8 @@ function keyup(event) {
 }
 */
 
-// const WIDTH = 1000; //window.innerWidth;
-// const HEIGHT = 1000; //window.innerHeight;
 const GRID_SIZE = 20;
 const MAX_AGENTS = 200;
-// const FREEZE = false;
-// const canvas = document.getElementById('canva');
-// canvas.addEventListener('click', (event) => {canvasClick(event)}, false);
-// canvas.width = WIDTH;
-// canvas.height = HEIGHT;
-// const ctx = canvas.getContext('2d');
 
 // Intended for implementing barriers. Lines can be passed into terrian,
 // which can then find which cells they pass through. See
@@ -310,21 +302,6 @@ export default class Terrain {
 
   }
 }
-
-/*
-let homeLocation;
-if (FREEZE) {
-  homeLocation = new Point(510, 510);
-} else {
-  homeLocation = new Point(Math.random() * (WIDTH - 100) + 50, Math.random() * (HEIGHT - 100) + 50);
-}
-const resourcesForTerrain = [
-  {loc: new CellLoc(5, 5), amount: 1.0}
-];
-const terrain = new Terrain(WIDTH, HEIGHT, homeLocation, GRID_SIZE, resourcesForTerrain);
-*/
-// This gets referenced directly by the agent object, which is really dodgy.
-// let resource = new Resource(new Point(250, 250));
 
 var times = [];
 var fps;
