@@ -181,15 +181,16 @@ export default class Terrain {
     this._agentsVision = this._cellSize * 10;
 
     this.colonies = [];
-    let colony = new Colony(
-      /* terrain              */ this,
-      /* location             */ this._homeLocation,
-      /* ID                   */ 0,
-      /* homeColor            */ [0,0,0],
-      /* agentColor           */ [0,200,200],
-      /* agentVision          */ this._agentsVision,
-      /* maxAgents            */ 1000,
-      /*meanStepsBetweenSpawns*/ 100);
+    let colonySpec = {
+      loc                    : this._homeLocation,
+      id                     : 0,
+      color                  : [0,0,0],
+      agentColor             : [0, 200, 200],
+      agentVision            : this._agentsVision,
+      maxAgents              : 1000,
+      meanStepsBetweenSpawns : 100
+    }
+    let colony = new Colony(this, colonySpec);
     this.colonies.push(colony);
 
     this._localBounds = this._preCalcLocalBounds(this._agentsVision);

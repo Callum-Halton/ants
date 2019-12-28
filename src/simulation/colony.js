@@ -2,20 +2,19 @@ import Agent from './agent.js';
 import { colorString } from './utils.js';
 
 export default class Colony {
-  constructor(terrain, loc, colonyID, homeColor, agentColor, agentVision,
-              maxAgents, meanStepsBetweenSpawns) {
+  constructor(terrain, spec) {
     this.terrain = terrain;
-    this.loc = loc;
-    this.colonyID = colonyID;
-    this.color = homeColor;
-    this.agentColor = agentColor;
+    this.loc = spec.loc;
+    this.id = spec.id;
+    this.color = spec.color;
+    this.agentColor = spec.agentColor;
     this.agentColorRender = colorString(this.agentColor);
-    this.agentVision = agentVision;
+    this.agentVision = spec.agentVision;
     this.agentRadius = 6;
     this.agentSpeed = 3;
-    this.maxAgents = maxAgents;
+    this.maxAgents = spec.maxAgents;
     this.agentsSpawned = 0;
-    this.meanStepsBetweenSpawns = meanStepsBetweenSpawns;
+    this.meanStepsBetweenSpawns = spec.meanStepsBetweenSpawns;
     this.framesUntilSpawn = 1;
     this.agents = [];
     this.terrain.changeFeature(this.loc, "home", 1);
