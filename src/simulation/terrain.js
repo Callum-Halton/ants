@@ -187,6 +187,7 @@ export default class Terrain {
       color                  : [0,0,0],
       agentColor             : [0, 200, 200],
       agentVision            : this._agentsVision,
+      agentAgitated          : 0.01,
       maxAgents              : 1000,
       meanStepsBetweenSpawns : 100
     }

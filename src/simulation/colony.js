@@ -3,6 +3,7 @@ import { colorString } from './utils.js';
 
 export default class Colony {
   constructor(terrain, spec) {
+    // Don't copy and keep a referenc to spec because spec might change later.
     this.terrain = terrain;
     this.loc = spec.loc;
     this.id = spec.id;
@@ -10,6 +11,7 @@ export default class Colony {
     this.agentColor = spec.agentColor;
     this.agentColorRender = colorString(this.agentColor);
     this.agentVision = spec.agentVision;
+    this.agentAgitated = spec.agentAgitated;
     this.agentRadius = 6;
     this.agentSpeed = 3;
     this.maxAgents = spec.maxAgents;

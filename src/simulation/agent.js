@@ -8,7 +8,6 @@ export default class Agent {
     this._colony = colony;
     this._loc = new Point(this._colony.loc.x, this._colony.loc.y);
     this._direction = Math.random() * 360;
-    this._agitated = 0.01;
     this._resourceMemory = 0;
     this._carriedResource = 0;
     this._resourceCarryingCapacity = 0.02;
@@ -90,7 +89,7 @@ export default class Agent {
   }
 
   _wanderAimlessly() {
-    if (Math.random() < this._agitated) {
+    if (Math.random() < this._colony.agentAgitated) {
       this._direction = Math.random() * 360;
     } // else just keep on truckin' in the same direction
   }
