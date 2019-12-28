@@ -3,15 +3,13 @@ import Colony from './colony.js';
 import { Cell, CellWithLocation, CellLoc } from './cell.js';
 import CogHelper from './cogHelper.js';
 
-const GRID_SIZE = 20;
-const MAX_AGENTS = 200;
-
 export default class Terrain {
   // Constructs a terrain of size width and height, consisting of square
   // cells which are of size cellSize on a side.
-  constructor(width, height) {
+  constructor(width, height, cellSize) {
     this.width = width;
     this.height = height;
+    this._cellSize = cellSize;
     this.minimumMarkerIntensities = {
       resourceMarker: 0.01,
       homeMarker: 0.01
@@ -20,7 +18,6 @@ export default class Terrain {
   }
 
   reset() {
-    this._cellSize = GRID_SIZE;
     this._widthInCells = Math.ceil(this.width/this._cellSize);
     this._heightInCells = Math.ceil(this.height/this._cellSize);
     this._grid = new Array(this._heightInCells);

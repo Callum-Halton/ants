@@ -30,6 +30,7 @@ export default class Simulation extends React.Component {
     this.state = {
       width: 1000,
       height: 1000,
+      cellSize: 20,
       frozen: true,
       activePaletteFeature: "resource",
       paletteFeatureAmount: 0.1,
@@ -37,7 +38,8 @@ export default class Simulation extends React.Component {
     this.saveContext = this.saveContext.bind(this);
     this.updateAnimationState = this.updateAnimationState.bind(this);
     this.canvasClick = this.canvasClick.bind(this);
-    this.terrain = new Terrain(this.state.width, this.state.height);
+    this.terrain = new Terrain(this.state.width, this.state.height,
+                               this.state.cellSize);
     this.toggleSimulationFrozen = this.toggleSimulationFrozen.bind(this);
     this.selectPaletteFeature = this.selectPaletteFeature.bind(this);
     this.selectPaletteFeatureAmount = this.selectPaletteFeatureAmount.bind(this);
