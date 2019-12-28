@@ -1,11 +1,12 @@
 import { MyMath, colorString, Point } from './utils.js';
 
 export default class Agent {
-  constructor(terrain, loc, vision, colonyID, homeColor, agentColor) {
+  constructor(terrain, colony, vision, colonyID, homeColor, agentColor) {
     // The agent can interact with the terrain via the following object
     // reference.
     this._terrain = terrain;
-    this._loc = new Point(loc.x, loc.y);
+    this._colony = colony;
+    this._loc = new Point(this._colony.loc.x, this._colony.loc.y);
     this._radius = 6;
     this._direction = Math.random() * 360;
     this._color = agentColor;
