@@ -1,4 +1,4 @@
-import { MyMath, colorString, Point } from './utils.js';
+import { MyMath, Point } from './utils.js';
 
 export default class Agent {
   constructor(terrain, colony) {
