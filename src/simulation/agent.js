@@ -1,7 +1,7 @@
 import { MyMath, colorString, Point } from './utils.js';
 
 export default class Agent {
-  constructor(terrain, colony, colonyID, homeColor) {
+  constructor(terrain, colony) {
     // The agent can interact with the terrain via the following object
     // reference.
     this._terrain = terrain;
