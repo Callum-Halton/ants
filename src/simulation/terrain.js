@@ -84,7 +84,11 @@ export default class Terrain {
   }
 
   getAgentsCount() {
-    return this._agents.length;
+    let agentsCount = 0;
+    for (const colony of this.colonies) {
+      agentsCount += colony.agentsCount();
+    }
+    return agentsCount;
   }
 
   changeFeature(location, feature, amount) {
@@ -235,50 +239,3 @@ export default class Terrain {
 
   }
 }
-
-var times = [];
-var fps;
-
-/*
-function showFps() {
-  ctx.fillStyle = "#000000";
-  ctx.font = "30px Courier";
-  const xPos = WIDTH-240;
-  ctx.fillText(terrain.getAgentsCount() + " AGENTS", xPos, HEIGHT-50);
-  ctx.fillText(fps + " FPS", xPos, HEIGHT-20);
-}
-*/
-
-var framesLeftToShowNotice = 3 * 30;
-
-/*
-function showNotice() {
-  if (framesLeftToShowNotice > 0) {
-    framesLeftToShowNotice -= 1;
-    ctx.fillStyle = "#000000";
-    ctx.font = "30px Courier";
-    const xPos = WIDTH / 2 - 150;
-    const yPos = HEIGHT / 2 - 20;
-    ctx.fillText("CLICK TO ADD RESOURCE", xPos, yPos);
-  }
-}
-*/
-
-/*
-function refreshLoop() {
-  window.requestAnimationFrame(() => {
-    terrain.draw();
-    showFps();
-    showNotice();
-    const now = performance.now();
-    while (times.length > 0 && times[0] <= now - 1000) {
-      times.shift();
-    }
-    times.push(now);
-    fps = times.length;
-    refreshLoop();
-  });
-}
-
-refreshLoop();
-*/

@@ -46,15 +46,47 @@ export default class Simulation extends React.Component {
     this.resetSimulation = this.resetSimulation.bind(this);
     this.runTests = this.runTests.bind(this);
     this.paletteFeatures = ["resource", "resourceMarker", "homeMarker"];
+    this.times = [];
+    this.fps = null;
+    this.framesLeftToShowNotice = 3 * 30;
   }
   
   componentDidMount() {
     this.rAF = requestAnimationFrame(this.updateAnimationState);
   }
 
+  showFps() {
+    this.ctx.fillStyle = "#000000";
+    this.ctx.font = "30px Courier";
+    const xPos = this.state.width-240;
+    this.ctx.fillText(this.terrain.getAgentsCount() + " AGENTS", xPos, this.state.height-50);
+    this.ctx.fillText(this.fps + " FPS", xPos, this.state.height-20);
+  }
+
+  showNotice() {
+    if (this.framesLeftToShowNotice > 0) {
+      this.framesLeftToShowNotice -= 1;
+      this.ctx.fillStyle = "#000000";
+      this.ctx.font = "30px Courier";
+      const xPos = this.state.width / 2 - 150;
+      const yPos = this.state.height / 2 - 20;
+      this.ctx.fillText("GO ANTS!", xPos, yPos);
+    }
+  }
+
   updateAnimationState() {
-    this.terrain.draw(this.ctx, this.state.frozen);
-    this.rAF = requestAnimationFrame(this.updateAnimationState);
+    this.rAF = requestAnimationFrame(() => {
+      this.terrain.draw(this.ctx, this.state.frozen);
+      this.showFps();
+      this.showNotice();
+      const now = performance.now();
+      while (this.times.length > 0 && this.times[0] <= now - 1000) {
+        this.times.shift();
+      }
+      this.times.push(now);
+      this.fps = this.times.length;
+      this.updateAnimationState();
+    });
   }
 
   // Duncan commented this back in. I think it's important for when we hide
@@ -133,3 +165,4 @@ export default class Simulation extends React.Component {
     );
   }
 }
+

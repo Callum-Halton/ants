@@ -24,6 +24,10 @@ export default class Colony {
     }
   }
 
+  agentsCount() {
+    return this.agents.length;
+  }
+
   spawnAgents() {
     this.framesUntilSpawn -= 1;
     if (this.agentsSpawned < this.maxAgents && this.framesUntilSpawn <= 0) {
