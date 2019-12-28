@@ -182,17 +182,19 @@ export default class Terrain {
 
     this.colonies = [];
     let colonySpec = {
-      loc                           : this._homeLocation,
-      id                            : 0,
-      color                         : [0,0,0],
-      agentColor                    : [0, 200, 200],
-      agentVision                   : this._agentsVision,
-      agentRadius                   : 6,
-      agentSpeed                    : 3,
-      agentAgitated                 : 0.01,
-      agentResourceCarryingCapacity : 0.02,
-      maxAgents                     : 1000,
-      meanStepsBetweenSpawns        : 100
+      loc                        : this._homeLocation,
+      id                         : 0,
+      color                      : [0,0,0],
+      maxAgents                  : 1000,
+      meanStepsBetweenSpawns     : 100,
+      agent: {
+        color                    : [0, 200, 200],
+        vision                   : this._agentsVision,
+        radius                   : 6,
+        speed                    : 3,
+        agitated                 : 0.01,
+        resourceCarryingCapacity : 0.02,
+      },
     }
     let colony = new Colony(this, colonySpec);
     this.colonies.push(colony);
