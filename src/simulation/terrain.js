@@ -2,22 +2,6 @@ import { MyMath, colorString, Point } from './utils.js';
 import Colony from './colony.js';
 import { Cell, CellWithLocation, CellLoc } from './cell.js';
 
-//var testMode = false;
-
-/*
-function keydown(event) {
-  if (event.key === "t") {
-    testMode = true;
-  }
-}
-
-function keyup(event) {
-  if (event.key === "t") {
-    // do nothing
-  }
-}
-*/
-
 const GRID_SIZE = 20;
 const MAX_AGENTS = 200;
 
@@ -319,84 +303,21 @@ function showNotice() {
   }
 }
 */
-/*
-class Test {
-  constructor() {
-    this._assertionFailCount = 0;
-    this._assertionPassCount = 0;
-  }
-
-  _assertEqual(a, b) {
-    if (a !== b) {
-      this._assertionFailCount += 1;
-    } else {
-      this._assertionPassCount += 1;
-    }
-  }
-
-  _testPoint() {
-    let p = new Point(25, 300);
-    this._assertEqual(p.x, 25);
-    this._assertEqual(p.y, 300);
-  }
-
-  _testCellLoc() {
-    let c = new CellLoc(60, 22);
-    this._assertEqual(c.row, 60);
-    this._assertEqual(c.col, 22);
-  }
-
-  _testPointToCellLoc() {
-    let p = new Point(150, 223);
-    let c = terrain.pointToCellLoc(p, 26);
-    this._assertEqual(c.row, 8);
-    this._assertEqual(c.col, 5);
-    p = new Point(30, 20);
-    c = terrain.pointToCellLoc(p, 10);
-    this._assertEqual(c.row, 2);
-    this._assertEqual(c.col, 3);
-    p = new Point(29, 19);
-    c = terrain.pointToCellLoc(p, 10);
-    this._assertEqual(c.row, 1);
-    this._assertEqual(c.col, 2);
-  }
-
-  _testLine() {
-  }
-
-  runAll() {
-    console.log("Runing all tests");
-    this._testPoint();
-    this._testCellLoc();
-    this._testPointToCellLoc();
-    this._testLine();
-    let totalAssertions = this._assertionFailCount + this._assertionPassCount;
-    console.log("Total assertions: " + totalAssertions);
-    console.log("Total failed assertions: " + this._assertionFailCount);
-    console.log("Total passed assertions: " + this._assertionPassCount);
-  }
-}
-*/
 
 /*
 function refreshLoop() {
-  if (testMode) {
-    const test = new Test();
-    test.runAll();
-  } else {
-    window.requestAnimationFrame(() => {
-      terrain.draw();
-      showFps();
-      showNotice();
-      const now = performance.now();
-      while (times.length > 0 && times[0] <= now - 1000) {
-        times.shift();
-      }
-      times.push(now);
-      fps = times.length;
-      refreshLoop();
-    });
-  }
+  window.requestAnimationFrame(() => {
+    terrain.draw();
+    showFps();
+    showNotice();
+    const now = performance.now();
+    while (times.length > 0 && times[0] <= now - 1000) {
+      times.shift();
+    }
+    times.push(now);
+    fps = times.length;
+    refreshLoop();
+  });
 }
 
 refreshLoop();

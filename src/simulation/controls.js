@@ -21,6 +21,7 @@ export default function Controls(props) {
             paletteFeatures={props.paletteFeatures}
           />
           <ResetSimulation resetSimulation={props.resetSimulation}/>
+          <RunTests runTests={props.runTests}/>
         </div>
       </div>
       {/* Duncan put this here to play with it
@@ -61,4 +62,9 @@ function SelectPaletteFeatureButtons(props) {
 function ResetSimulation(props) {
   return (<button type="button" className={"btn btn-secondary"}
           onClick={props.resetSimulation}> Reset </button>);
+}
+
+function RunTests(props) {
+  return (<button type="button" className={"btn btn-secondary"}
+          onClick={props.runTests}> Run Tests </button>);
 }

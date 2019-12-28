@@ -1,6 +1,7 @@
 import React from 'react';
 import Controls from './controls';
 import Terrain from './terrain.js';
+import Test from './test.js';
 
 class PureCanvas extends React.Component {
 
@@ -41,6 +42,7 @@ export default class Simulation extends React.Component {
     this.selectPaletteFeature = this.selectPaletteFeature.bind(this);
     this.selectPaletteFeatureAmount = this.selectPaletteFeatureAmount.bind(this);
     this.resetSimulation = this.resetSimulation.bind(this);
+    this.runTests = this.runTests.bind(this);
     this.paletteFeatures = ["resource", "resourceMarker", "homeMarker"];
   }
   
@@ -83,6 +85,11 @@ export default class Simulation extends React.Component {
     });
   }
 
+  runTests() {
+    const test = new Test();
+    test.runAll();
+  }
+
   // componentDidUpdate() { }
 
   canvasClick(nativeEvent) {
@@ -118,6 +125,7 @@ export default class Simulation extends React.Component {
           selectPaletteFeatureAmount={this.selectPaletteFeatureAmount}
           paletteFeatureAmount={this.state.paletteFeatureAmount}
           resetSimulation={this.resetSimulation}
+          runTests={this.runTests}
         />
       </div>
     );
