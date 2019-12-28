@@ -22,3 +22,13 @@ export class Point {
     this.y = y;
   }
 }
+
+// Intended for implementing barriers. Lines can be passed into terrian,
+// which can then find which cells they pass through. See
+// Terrain::addBarrier()
+export class Line {
+  constructor(point_a, point_b) {
+    this.point_a = point_a;
+    this.point_b = point_b;
+  }
+}

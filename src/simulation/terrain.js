@@ -5,16 +5,6 @@ import { Cell, CellWithLocation, CellLoc } from './cell.js';
 const GRID_SIZE = 20;
 const MAX_AGENTS = 200;
 
-// Intended for implementing barriers. Lines can be passed into terrian,
-// which can then find which cells they pass through. See
-// Terrain::addBarrier()
-class Line {
-  constructor(point_a, point_b) {
-    this.point_a = point_a;
-    this.point_b = point_b;
-  }
-}
-
 class CogHelper {
   constructor(defaultPosition, markerType) {
     this.markerType = markerType; // this is a string.
