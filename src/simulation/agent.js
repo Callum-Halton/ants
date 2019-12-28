@@ -7,7 +7,6 @@ export default class Agent {
     this._terrain = terrain;
     this._colony = colony;
     this._loc = new Point(this._colony.loc.x, this._colony.loc.y);
-    this._radius = 6;
     this._direction = Math.random() * 360;
     this._speed = 3;
     this._agitated = 0.01;
@@ -212,12 +211,12 @@ export default class Agent {
     negative angles are allowed, but it we decide that angles are
     to always be in the range [0..360), then the mod is necessary.
     */
-    if (this._loc.x > (this._terrain.width - this._radius) ||
-        this._loc.x < this._radius) {
+    if (this._loc.x > (this._terrain.width - this._colony.agentRadius) ||
+        this._loc.x < this._colony.agentRadius) {
       this._direction = (180 - this._direction) % 360;
     }
-    if (this._loc.y > (this._terrain.height - this._radius) ||
-        this._loc.y < this._radius) {
+    if (this._loc.y > (this._terrain.height - this._colony.agentRadius) ||
+        this._loc.y < this._colony.agentRadius) {
       this._direction = -this._direction % 360;
     }
   }
@@ -261,19 +260,20 @@ export default class Agent {
     }
     ctx.fillStyle = this._colony.agentColorRender;
     ctx.beginPath();
-    ctx.arc(this._loc.x, this._loc.y, this._radius, 0, Math.PI * 2);
+    ctx.arc(this._loc.x, this._loc.y, this._colony.agentRadius, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.save();
     ctx.translate(this._loc.x, this._loc.y);
     ctx.rotate((this._direction - 45) * 2 * Math.PI / 360);
-    ctx.fillRect(0, 0, this._radius, this._radius);
+    ctx.fillRect(0, 0, this._colony.agentRadius, this._colony.agentRadius);
     ctx.restore();
 
     if (this._carriedResource == 0) {
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(this._loc.x, this._loc.y, this._radius / 2, 0, Math.PI * 2);
+      ctx.arc(this._loc.x, this._loc.y, this._colony.agentRadius / 2, 0,
+              Math.PI * 2);
       ctx.fill();
     }
     /* VISION CIRCLE
