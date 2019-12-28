@@ -12,6 +12,7 @@ export default class Colony {
     this.agentColorRender = colorString(this.agentColor);
     this.agentVision = agentVision;
     this.agentRadius = 6;
+    this.agentSpeed = 3;
     this.maxAgents = maxAgents;
     this.agentsSpawned = 0;
     this.meanStepsBetweenSpawns = meanStepsBetweenSpawns;

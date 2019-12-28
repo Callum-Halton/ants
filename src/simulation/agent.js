@@ -8,7 +8,6 @@ export default class Agent {
     this._colony = colony;
     this._loc = new Point(this._colony.loc.x, this._colony.loc.y);
     this._direction = Math.random() * 360;
-    this._speed = 3;
     this._agitated = 0.01;
     this._resourceMemory = 0;
     this._carriedResource = 0;
@@ -56,8 +55,8 @@ export default class Agent {
   }
 
   _move() {
-    this._loc.x += this._speed * MyMath.cos(this._direction);
-    this._loc.y += this._speed * MyMath.sin(this._direction);
+    this._loc.x += this._colony.agentSpeed * MyMath.cos(this._direction);
+    this._loc.y += this._colony.agentSpeed * MyMath.sin(this._direction);
     // Callum, I added the following checks because sometimes the agents were
     // going off the edge of the canvas, leading to indexing out of bounds
     // in the cell array in terrain.
@@ -69,7 +68,7 @@ export default class Agent {
 
   /*
   _reached(target) {
-    let threshold = this._speed / 2;
+    let threshold = this._colony.agentSpeed / 2;
     if (Math.hypot(this._loc.x - target.loc.x, this._loc.y - target.loc.y) <=
         threshold) {
       return true;
