@@ -1,7 +1,7 @@
 import { MyMath, colorString, Point } from './utils.js';
 
 export default class Agent {
-  constructor(terrain, colony, colonyID, homeColor, agentColor) {
+  constructor(terrain, colony, colonyID, homeColor) {
     // The agent can interact with the terrain via the following object
     // reference.
     this._terrain = terrain;
@@ -9,9 +9,6 @@ export default class Agent {
     this._loc = new Point(this._colony.loc.x, this._colony.loc.y);
     this._radius = 6;
     this._direction = Math.random() * 360;
-    this._color = agentColor;
-    //console.log(a, "bye");
-    this._cRender = colorString(this._color);
     this._speed = 3;
     this._agitated = 0.01;
     this._resourceMemory = 0;
@@ -57,13 +54,6 @@ export default class Agent {
       }
     }
     return angle;
-  }
-
-  _brighten(n) {
-    for (var i = 0; i < 3; i++) {
-      this._color[i] += n;
-    }
-    this._cRender = colorString(this._color);
   }
 
   _move() {
@@ -146,7 +136,6 @@ export default class Agent {
       if (this._carriedResource === this._resourceCarryingCapacity) {
         // Just got full
         this._resourceMemory = this._carriedResource;
-        this._cRender = "rgb(255, 0, 0)";
       } else if (removedResource === 0) {
         // There ain't no resource here, so let's look for some ...
         let features = {
@@ -184,7 +173,6 @@ export default class Agent {
       // Is this home? ...
       if (this._terrain.getFeatureValueHere(this._loc,"home")) {
         this._carriedResource = 0;
-        this._cRender = colorString(this._color);
         this._homeMemory = 0.2;
       } else {
         //Let's look for home ...
@@ -271,7 +259,7 @@ export default class Agent {
     if (!agentsFrozen) {
       this._update();
     }
-    ctx.fillStyle = this._cRender;
+    ctx.fillStyle = this._colony.agentColorRender;
     ctx.beginPath();
     ctx.arc(this._loc.x, this._loc.y, this._radius, 0, Math.PI * 2);
     ctx.fill();
@@ -289,7 +277,7 @@ export default class Agent {
       ctx.fill();
     }
     /* VISION CIRCLE
-    ctx.strokeStyle = this._cRender;
+    ctx.strokeStyle = this._colony.agentColorRender;
     ctx.beginPath();
     ctx.arc(this._loc.x, this._loc.y, this._colony.agentVision, 0,
             Math.PI * 2);

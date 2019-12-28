@@ -1,4 +1,5 @@
 import Agent from './agent.js';
+import { colorString } from './utils.js';
 
 export default class Colony {
   constructor(terrain, loc, colonyID, homeColor, agentColor, agentVision,
@@ -8,6 +9,7 @@ export default class Colony {
     this.colonyID = colonyID;
     this.color = homeColor;
     this.agentColor = agentColor;
+    this.agentColorRender = colorString(this.agentColor);
     this.agentVision = agentVision;
     this.maxAgents = maxAgents;
     this.agentsSpawned = 0;
