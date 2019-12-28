@@ -3,7 +3,6 @@ import Colony from './colony.js';
 import { Cell, CellWithLocation, CellLoc } from './cell.js';
 
 //var hideDebug = true;
-//var stopAnimation = false;
 //var MORERESOURCE = false;
 //var testMode = false;
 
@@ -11,8 +10,6 @@ import { Cell, CellWithLocation, CellLoc } from './cell.js';
 function keydown(event) {
   if (event.key === "a") {
     hideDebug = false;
-  } else if (event.key === "s") {
-    stopAnimation = true;
   } else if (event.key === "r") {
     MORERESOURCE = true;
   } else if (event.key === "t") {
@@ -405,9 +402,7 @@ function refreshLoop() {
       }
       times.push(now);
       fps = times.length;
-      if (!stopAnimation) {
-        refreshLoop();
-      }
+      refreshLoop();
     });
   }
 }
