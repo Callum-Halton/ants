@@ -49,8 +49,6 @@ export default class Simulation extends React.Component {
   }
 
   updateAnimationState() {
-    // pass in one parameter and return object literal
-    this.setState(prevState => ({angle: prevState.angle + 1 }));
     this.terrain.draw(this.ctx, this.state.frozen);
     this.rAF = requestAnimationFrame(this.updateAnimationState);
   }
