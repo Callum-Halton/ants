@@ -282,6 +282,12 @@ export default class Agent {
     ctx.fillRect(0, 0, this._radius, this._radius);
     ctx.restore();
 
+    if (this._carriedResource == 0) {
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(this._loc.x, this._loc.y, this._radius / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
     /* VISION CIRCLE
     ctx.strokeStyle = this._cRender;
     ctx.beginPath();
