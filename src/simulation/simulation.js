@@ -30,7 +30,7 @@ export default class Simulation extends React.Component {
       width: 1000,
       height: 1000,
       frozen: true,
-      activePaletteFeature: "homeMarker",
+      activePaletteFeature: "resource",
       paletteFeatureAmount: 0.1,
     };
     this.saveContext = this.saveContext.bind(this);
