@@ -35,7 +35,7 @@ export default class Agent {
     } else if (dy > 0) {
       if (dx > 0) {
         // Bottom-right quadrant
-        angle = angle;
+        // angle = angle;
       } else {
         // Bottom-left quadrant
         angle = 180 + angle;
@@ -270,7 +270,7 @@ export default class Agent {
     ctx.fillRect(0, 0, this._colony.agent.radius, this._colony.agent.radius);
     ctx.restore();
 
-    if (this._carriedResource == 0) {
+    if (this._carriedResource === 0) {
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.arc(this._loc.x, this._loc.y, this._colony.agent.radius / 2, 0,

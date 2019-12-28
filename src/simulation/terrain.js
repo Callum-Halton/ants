@@ -1,4 +1,4 @@
-import { MyMath, colorString, Point } from './utils.js';
+import { Point } from './utils.js';
 import Colony from './colony.js';
 import { Cell, CellWithLocation, CellLoc } from './cell.js';
 import CogHelper from './cogHelper.js';
@@ -157,7 +157,6 @@ export default class Terrain {
   // features is an object with a property for each feature that is being searched for e.g.
   // { home: null, homeMarker: null }
   getLocalFeatures(/* Point */ location, /* features object */ features) {
-    let cellLoc = this.pointToCellLoc(location, this._cellSize);
     let cogHelpers = {};
     if ("resourceMarker" in features) {
       cogHelpers.resourceMarker = new CogHelper(location, "resourceMarker");
