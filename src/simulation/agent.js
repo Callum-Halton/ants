@@ -1,7 +1,7 @@
 import { MyMath, colorString, Point } from './utils.js';
 
 export default class Agent {
-  constructor(terrain, colony, vision, colonyID, homeColor, agentColor) {
+  constructor(terrain, colony, colonyID, homeColor, agentColor) {
     // The agent can interact with the terrain via the following object
     // reference.
     this._terrain = terrain;
@@ -13,7 +13,6 @@ export default class Agent {
     //console.log(a, "bye");
     this._cRender = colorString(this._color);
     this._speed = 3;
-    this._vision = vision;
     this._agitated = 0.01;
     this._resourceMemory = 0;
     this._carriedResource = 0;
@@ -157,7 +156,7 @@ export default class Agent {
         this._terrain.getLocalFeatures(this._loc, features);
         if (features.resource.length > 0) {
           // Can see resource, so move towards it
-          let closestResource = {loc: null, dist: this._vision + 10};
+          let closestResource = {loc: null, dist: this._colony.agentVision + 10};
           features.resource.forEach(resourceLoc => {
             let distanceToResource = Math.hypot(resourceLoc.x - this._loc.x,
                                                 resourceLoc.y - this._loc.y);
@@ -292,7 +291,7 @@ export default class Agent {
     /* VISION CIRCLE
     ctx.strokeStyle = this._cRender;
     ctx.beginPath();
-    ctx.arc(this._loc.x, this._loc.y, this._vision, 0,
+    ctx.arc(this._loc.x, this._loc.y, this._colony.agentVision, 0,
             Math.PI * 2);
     ctx.stroke();
     */

@@ -20,7 +20,7 @@ export default class Colony {
   spawnAgents() {
     this.framesUntilSpawn -= 1;
     if (this.agentsSpawned < this.maxAgents && this.framesUntilSpawn <= 0) {
-      this.agents.push(new Agent(this.terrain, this, this.vision,
+      this.agents.push(new Agent(this.terrain, this,
         this.colonyID, this.homeColor, this.agentColor));
       this.framesUntilSpawn = Math.floor(
         Math.random() * this.meanStepsBetweenSpawns * 2);
