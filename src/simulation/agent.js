@@ -10,7 +10,6 @@ export default class Agent {
     this._direction = Math.random() * 360;
     this._resourceMemory = 0;
     this._carriedResource = 0;
-    this._resourceCarryingCapacity = 0.02;
     this._homeMemory = 0.2;
   }
 
@@ -123,14 +122,14 @@ export default class Agent {
     direction by no more than a fixed amount on each step.
     */
 
-    let remainingCapacity = this._resourceCarryingCapacity - this._carriedResource;
+    let remainingCapacity = this._colony.agentResourceCarryingCapacity - this._carriedResource;
     if (remainingCapacity) { // head for resource
       // First, try to consume resource
       // TODO: limit rate that agents can remove resource
       let removedResource = this._terrain.removeResource(this._loc,
                                                          remainingCapacity);
       this._carriedResource += removedResource;
-      if (this._carriedResource === this._resourceCarryingCapacity) {
+      if (this._carriedResource === this._colony.agentResourceCarryingCapacity) {
         // Just got full
         this._resourceMemory = this._carriedResource;
       } else if (removedResource === 0) {

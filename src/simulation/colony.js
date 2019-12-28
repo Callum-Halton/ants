@@ -12,6 +12,7 @@ export default class Colony {
     this.agentColorRender = colorString(this.agentColor);
     this.agentVision = spec.agentVision;
     this.agentAgitated = spec.agentAgitated;
+    this.agentResourceCarryingCapacity = spec.agentResourceCarryingCapacity;
     this.agentRadius = spec.agentRadius;
     this.agentSpeed = spec.agentSpeed;
     this.maxAgents = spec.maxAgents;
