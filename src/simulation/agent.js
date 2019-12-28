@@ -53,8 +53,8 @@ export default class Agent {
   }
 
   _move() {
-    this._loc.x += this._colony.agentSpeed * MyMath.cos(this._direction);
-    this._loc.y += this._colony.agentSpeed * MyMath.sin(this._direction);
+    this._loc.x += this._colony.agent.speed * MyMath.cos(this._direction);
+    this._loc.y += this._colony.agent.speed * MyMath.sin(this._direction);
     // Callum, I added the following checks because sometimes the agents were
     // going off the edge of the canvas, leading to indexing out of bounds
     // in the cell array in terrain.
@@ -66,7 +66,7 @@ export default class Agent {
 
   /*
   _reached(target) {
-    let threshold = this._colony.agentSpeed / 2;
+    let threshold = this._colony.agent.speed / 2;
     if (Math.hypot(this._loc.x - target.loc.x, this._loc.y - target.loc.y) <=
         threshold) {
       return true;
@@ -88,7 +88,7 @@ export default class Agent {
   }
 
   _wanderAimlessly() {
-    if (Math.random() < this._colony.agentAgitated) {
+    if (Math.random() < this._colony.agent.agitated) {
       this._direction = Math.random() * 360;
     } // else just keep on truckin' in the same direction
   }
@@ -122,14 +122,16 @@ export default class Agent {
     direction by no more than a fixed amount on each step.
     */
 
-    let remainingCapacity = this._colony.agentResourceCarryingCapacity - this._carriedResource;
+    let remainingCapacity = this._colony.agent.resourceCarryingCapacity -
+                            this._carriedResource;
     if (remainingCapacity) { // head for resource
       // First, try to consume resource
       // TODO: limit rate that agents can remove resource
       let removedResource = this._terrain.removeResource(this._loc,
                                                          remainingCapacity);
       this._carriedResource += removedResource;
-      if (this._carriedResource === this._colony.agentResourceCarryingCapacity) {
+      if (this._carriedResource ===
+          this._colony.agent.resourceCarryingCapacity) {
         // Just got full
         this._resourceMemory = this._carriedResource;
       } else if (removedResource === 0) {
@@ -141,7 +143,8 @@ export default class Agent {
         this._terrain.getLocalFeatures(this._loc, features);
         if (features.resource.length > 0) {
           // Can see resource, so move towards it
-          let closestResource = {loc: null, dist: this._colony.agentVision + 10};
+          let closestResource = {
+                  loc: null, dist: this._colony.agent.vision + 10};
           features.resource.forEach(resourceLoc => {
             let distanceToResource = Math.hypot(resourceLoc.x - this._loc.x,
                                                 resourceLoc.y - this._loc.y);
@@ -208,12 +211,12 @@ export default class Agent {
     negative angles are allowed, but it we decide that angles are
     to always be in the range [0..360), then the mod is necessary.
     */
-    if (this._loc.x > (this._terrain.width - this._colony.agentRadius) ||
-        this._loc.x < this._colony.agentRadius) {
+    if (this._loc.x > (this._terrain.width - this._colony.agent.radius) ||
+        this._loc.x < this._colony.agent.radius) {
       this._direction = (180 - this._direction) % 360;
     }
-    if (this._loc.y > (this._terrain.height - this._colony.agentRadius) ||
-        this._loc.y < this._colony.agentRadius) {
+    if (this._loc.y > (this._terrain.height - this._colony.agent.radius) ||
+        this._loc.y < this._colony.agent.radius) {
       this._direction = -this._direction % 360;
     }
   }
@@ -255,28 +258,29 @@ export default class Agent {
     if (!agentsFrozen) {
       this._update();
     }
-    ctx.fillStyle = this._colony.agentColorRender;
+    ctx.fillStyle = this._colony.agent.colorRender;
     ctx.beginPath();
-    ctx.arc(this._loc.x, this._loc.y, this._colony.agentRadius, 0, Math.PI * 2);
+    ctx.arc(this._loc.x, this._loc.y, this._colony.agent.radius, 0,
+            Math.PI * 2);
     ctx.fill();
 
     ctx.save();
     ctx.translate(this._loc.x, this._loc.y);
     ctx.rotate((this._direction - 45) * 2 * Math.PI / 360);
-    ctx.fillRect(0, 0, this._colony.agentRadius, this._colony.agentRadius);
+    ctx.fillRect(0, 0, this._colony.agent.radius, this._colony.agent.radius);
     ctx.restore();
 
     if (this._carriedResource == 0) {
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(this._loc.x, this._loc.y, this._colony.agentRadius / 2, 0,
+      ctx.arc(this._loc.x, this._loc.y, this._colony.agent.radius / 2, 0,
               Math.PI * 2);
       ctx.fill();
     }
     /* VISION CIRCLE
-    ctx.strokeStyle = this._colony.agentColorRender;
+    ctx.strokeStyle = this._colony.agent.colorRender;
     ctx.beginPath();
-    ctx.arc(this._loc.x, this._loc.y, this._colony.agentVision, 0,
+    ctx.arc(this._loc.x, this._loc.y, this._colony.agent.vision, 0,
             Math.PI * 2);
     ctx.stroke();
     */

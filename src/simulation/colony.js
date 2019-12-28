@@ -3,24 +3,25 @@ import { colorString } from './utils.js';
 
 export default class Colony {
   constructor(terrain, spec) {
-    // Don't copy and keep a referenc to spec because spec might change later.
+    // Don't copy and keep a reference to spec because spec might change later.
     this.terrain = terrain;
     this.loc = spec.loc;
     this.id = spec.id;
     this.color = spec.color;
-    this.agentColor = spec.agent.color;
-    this.agentColorRender = colorString(this.agentColor);
-    this.agentVision = spec.agent.vision;
-    this.agentAgitated = spec.agent.agitated;
-    this.agentResourceCarryingCapacity = spec.agent.resourceCarryingCapacity;
-    this.agentRadius = spec.agent.radius;
-    this.agentSpeed = spec.agent.speed;
     this.maxAgents = spec.maxAgents;
     this.agentsSpawned = 0;
     this.meanStepsBetweenSpawns = spec.meanStepsBetweenSpawns;
     this.framesUntilSpawn = 1;
     this.agents = [];
     this.terrain.changeFeature(this.loc, "home", 1);
+    this.agent = {
+      colorRender              : colorString(spec.agent.color),
+      vision                   : spec.agent.vision,
+      agitated                 : spec.agent.agitated,
+      resourceCarryingCapacity : spec.agent.resourceCarryingCapacity,
+      radius                   : spec.agent.radius,
+      speed                    : spec.agent.speed,
+    }
   }
 
   spawnAgents() {
