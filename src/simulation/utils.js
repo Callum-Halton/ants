@@ -16,6 +16,11 @@ export function colorString(color) {
     return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
 }
 
+export function colorStringRGBA(color, alpha) {
+    return `rgb(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
+}
+
+
 export class Point {
   constructor(x, y) {
     this.x = x;

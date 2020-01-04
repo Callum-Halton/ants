@@ -2,6 +2,8 @@ import { Point } from './utils.js';
 import { CellLoc } from './cell.js';
 import Terrain from './terrain.js'
 
+// This is all based on the old terrain spec and instantiation method and so has a bucket of bugs
+
 export default class Test {
   constructor() {
     this._assertionFailCount = 0;

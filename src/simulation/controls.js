@@ -19,9 +19,17 @@ export default function Controls(props) {
             background={[0, 200, 200]}
           />
           <SelectPaletteFeatureButtons
+            featureBucket={"things"}
             selectPaletteFeature={props.selectPaletteFeature}
             activePaletteFeature={props.activePaletteFeature}
-            paletteFeatures={props.paletteFeatures}
+            paletteFeatures={props.paletteFeatures.things}
+          />
+          <ResetSimulation resetSimulation={props.resetSimulation}/>
+          <SelectPaletteFeatureButtons
+            featureBucket={"markers"}
+            selectPaletteFeature={props.selectPaletteFeature}
+            activePaletteFeature={props.activePaletteFeature}
+            paletteFeatures={props.paletteFeatures.markers}
           />
           <RunTests runTests={props.runTests}/>
         </div>
@@ -56,9 +64,12 @@ function ToggleFrozenButton(props) {
 
 function SelectPaletteFeatureButtons(props) {
   let radioButtons = props.paletteFeatures.map(feature =>
-    <button key={`${feature}Selection`} className={`btn btn-secondary ${props.activePaletteFeature === feature ?
-      "active" : ""}`} onClick={() => {props.selectPaletteFeature(feature)}}>
-      {feature}
+    <button
+      key={`${feature}Selection`}
+      className={`btn btn-secondary ${props.activePaletteFeature.feature === feature
+        && props.activePaletteFeature.featureBucket === props.featureBucket ? "active" : ""}`}
+      onClick={() => {props.selectPaletteFeature(props.featureBucket, feature)}}>
+          {feature}
     </button>
   );
 

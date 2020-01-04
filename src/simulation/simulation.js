@@ -32,7 +32,10 @@ export default class Simulation extends React.Component {
       height: 1000,
       cellSize: 20,
       frozen: true,
-      activePaletteFeature: "resource",
+      activePaletteFeature: {
+                             featureBucket : "things",
+                             feature       : "resource",
+                            },
       paletteFeatureAmount: 0.1,
     };
     this.saveContext = this.saveContext.bind(this);
@@ -45,7 +48,7 @@ export default class Simulation extends React.Component {
     this.selectPaletteFeatureAmount = this.selectPaletteFeatureAmount.bind(this);
     this.resetSimulation = this.resetSimulation.bind(this);
     this.runTests = this.runTests.bind(this);
-    this.paletteFeatures = ["resource", "resourceMarker", "homeMarker"];
+    this.paletteFeatures = {things: ["resource"], markers:["0R", "0H", "1R", "1H"]};
     this.times = [];
     this.fps = null;
     this.framesLeftToShowNotice = 3 * 30;
@@ -59,7 +62,7 @@ export default class Simulation extends React.Component {
     this.ctx.fillStyle = "#000000";
     this.ctx.font = "30px Courier";
     const xPos = this.state.width-240;
-    this.ctx.fillText(this.terrain.getAgentsCount() + " AGENTS", xPos, this.state.height-50);
+    // this.ctx.fillText(this.terrain.getAgentsCount() + " AGENTS", xPos, this.state.height-50);
     this.ctx.fillText(this.fps + " FPS", xPos, this.state.height-20);
   }
 
@@ -107,9 +110,12 @@ export default class Simulation extends React.Component {
     }));
   }
 
-  selectPaletteFeature(feature) {
+  selectPaletteFeature(featureBucket, feature) {
     this.setState({
-      activePaletteFeature: feature,
+      activePaletteFeature: {
+                             featureBucket : featureBucket,
+                             feature       : feature,
+                            },
     });
   }
 
@@ -130,9 +136,8 @@ export default class Simulation extends React.Component {
     let clickPoint = {};
     clickPoint.x = nativeEvent.offsetX;
     clickPoint.y = nativeEvent.offsetY;
-    this.ctx.fillStyle = "white"; this.ctx.beginPath(); this.ctx.arc(clickPoint.x, clickPoint.y, 3, 0, Math.PI * 2); this.ctx.fill();
-    this.terrain.changeFeature(clickPoint, this.state.activePaletteFeature,
-                               this.state.paletteFeatureAmount);
+    this.terrain.changeFeature(clickPoint, this.state.activePaletteFeature.featureBucket,
+      this.state.activePaletteFeature.feature, this.state.paletteFeatureAmount);
   }
   
   resetSimulation() {

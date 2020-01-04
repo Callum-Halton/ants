@@ -8,9 +8,12 @@ export default class Agent {
     this._colony = colony;
     this._loc = new Point(this._colony.loc.x, this._colony.loc.y);
     this._direction = Math.random() * 360;
-    this._resourceMemory = 0;
     this._carriedResource = 0;
-    this._homeMemory = 0.2;
+    this._selected = false;
+    this._memories = {
+      resource: 0,
+      home    : 0.2,
+    };
   }
 
   _angleTo(target) {
@@ -122,8 +125,10 @@ export default class Agent {
     direction by no more than a fixed amount on each step.
     */
 
+    let features = {things : {}, markers : {}};
     let remainingCapacity = this._colony.agent.resourceCarryingCapacity -
                             this._carriedResource;
+    //console.log(remainingCapacity);
     if (remainingCapacity) { // head for resource
       // First, try to consume resource
       // TODO: limit rate that agents can remove resource
@@ -133,33 +138,35 @@ export default class Agent {
       if (this._carriedResource ===
           this._colony.agent.resourceCarryingCapacity) {
         // Just got full
-        this._resourceMemory = this._carriedResource;
+        this._memories.resource = this._carriedResource;
       } else if (removedResource === 0) {
         // There ain't no resource here, so let's look for some ...
-        let features = {
-          resource: null,
-          resourceMarker: null
-        };
-        this._terrain.getLocalFeatures(this._loc, features);
-        if (features.resource.length > 0) {
+        let resourceMarkerID = this._colony.agent.markerIDs.resource;
+        features.things.resource = [];
+        features.markers[resourceMarkerID] = null;
+        this._terrain.getLocalFeatures(this._loc, features, this._colony.agent.localBounds);
+        /*if (features.things.resource.length > 0) {
+          console.log(features);
+        }*/
+        if (features.things.resource.length > 0) {
           // Can see resource, so move towards it
           let closestResource = {
                   loc: null, dist: this._colony.agent.vision + 10};
-          features.resource.forEach(resourceLoc => {
+          features.things.resource.forEach(resourceLoc => {
             let distanceToResource = Math.hypot(resourceLoc.x - this._loc.x,
                                                 resourceLoc.y - this._loc.y);
             if (distanceToResource < closestResource.dist) {
               closestResource = {loc: resourceLoc, dist: distanceToResource};
             }
           });
-          if (closestResource.loc === null) {
-            closestResource.loc = features.resource[0];
+          if (closestResource.loc == null) {
+            closestResource.loc = features.things.resource[0];
           }
           this._direction = this._angleTo(closestResource.loc);
         } else {
           // Cannot see resource, so let's try smelling for some ...
           let directionUpResourceMarkerGradient =
-              this._upGradientDirection(features.resourceMarker);
+              this._upGradientDirection(features.markers[resourceMarkerID]);
           if (directionUpResourceMarkerGradient) {
             this._direction = directionUpResourceMarkerGradient;
           } else {
@@ -169,24 +176,23 @@ export default class Agent {
         }
       }
     } else { // head for home
+      let homeMarkerID = this._colony.agent.markerIDs.home;
       // Is this home? ...
-      if (this._terrain.getFeatureValueHere(this._loc,"home")) {
+      if (this._terrain.isMyColonyHereHere(this._loc, this._colony.id)) {
         this._carriedResource = 0;
-        this._homeMemory = 0.2;
+        this._memories.home = 0.2;
       } else {
         //Let's look for home ...
-        let features = {
-          home: null,
-          homeMarker: null
-        };
-        this._terrain.getLocalFeatures(this._loc, features);
-        if (features.home.length > 0) {
+        features.things[this._colony.id] = [];
+        features.markers[homeMarkerID] = null;
+        this._terrain.getLocalFeatures(this._loc, features, this._colony.agent.localBounds);
+        if (features.things.home.length > 0) {
           // Can see home, so move towards it
-          this._direction = this._angleTo(features.home[0]);
+          this._direction = this._angleTo(features.things.home[0]);
         } else {
           // Cannot see home, so let's try smelling for it ...
           let directionUpHomeMarkerGradient =
-              this._upGradientDirection(features.homeMarker);
+              this._upGradientDirection(features.markers[homeMarkerID]);
           if (directionUpHomeMarkerGradient) {
             this._direction = directionUpHomeMarkerGradient;
           } else {
@@ -222,18 +228,14 @@ export default class Agent {
   }
 
   _dropMarkers() {
-    if (this._resourceMemory) {
-      this._terrain.changeFeature(this._loc, "resourceMarker", this._resourceMemory);
-      this._resourceMemory *= 0.995;
-      if (this._resourceMemory < this._terrain.minimumMarkerIntensities.resourceMarker) {
-        this._resourceMemory = 0;
-      }
-    }
-    if (this._homeMemory) {
-      this._terrain.changeFeature(this._loc, "homeMarker", this._homeMemory);
-      this._homeMemory *= 0.995;
-      if (this._homeMemory < this._terrain.minimumMarkerIntensities.homeMarker) {
-        this._homeMemory = 0;
+    for (let thing in this._memories) {
+      let markerID = this._colony.agent.markerIDs[thing];
+      if (this._memories[thing]) {
+        this._terrain.changeFeature(this._loc, "markers", markerID, this._memories[thing]);
+        this._memories[thing] *= 0.995;
+        if (this._memories[thing] < this._terrain.markerProfiles[markerID].minimumIntensity) {
+          this._memories[thing] = 0;
+        }
       }
     }
     /*
@@ -254,21 +256,30 @@ export default class Agent {
     this._dropMarkers();
   }
 
-  draw(ctx, agentsFrozen) {
-    if (!agentsFrozen) {
-      this._update();
-    }
-    ctx.fillStyle = this._colony.agent.colorRender;
+  _drawAgentShape(ctx, radius, color) {
+    ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(this._loc.x, this._loc.y, this._colony.agent.radius, 0,
+    ctx.arc(this._loc.x, this._loc.y, radius, 0,
             Math.PI * 2);
     ctx.fill();
 
     ctx.save();
     ctx.translate(this._loc.x, this._loc.y);
     ctx.rotate((this._direction - 45) * 2 * Math.PI / 360);
-    ctx.fillRect(0, 0, this._colony.agent.radius, this._colony.agent.radius);
+    ctx.fillRect(0, 0, radius, radius);
     ctx.restore();
+  }
+
+  draw(ctx, agentsFrozen) {
+    if (!agentsFrozen) {
+      this._update();
+    }
+    if (this._selected) {
+      this._drawAgentShape(ctx, this._colony.agent.radius * 1.5, this._colony.agent.colorRender);
+      this._drawAgentShape(ctx, this._colony.agent.radius * 1.25, '#ffffff');
+    }
+
+    this._drawAgentShape(ctx, this._colony.agent.radius, this._colony.agent.colorRender);
 
     if (this._carriedResource === 0) {
       ctx.fillStyle = '#ffffff';
