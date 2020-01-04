@@ -49,7 +49,7 @@ function ToggleFrozenButton(props) {
   const pause = <FontAwesomeIcon icon={faPause} />
   return (
     <button type="button" className={"btn btn-secondary"} onClick={props.toggleSimulationFrozen}>
-      {props.frozen ? pause : play}
+      {props.frozen ? play : pause}
     </button>
   );
 }
