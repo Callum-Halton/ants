@@ -1,11 +1,14 @@
 import React from 'react';
 import FeatureBar from './progBar.js';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlay, faPause, faStepBackward } from '@fortawesome/free-solid-svg-icons';
 
 export default function Controls(props) {
   return(
     <div className="col">
       <div className="row">
         <div className="col">
+          <ResetSimulation resetSimulation={props.resetSimulation}/>
           <ToggleFrozenButton
             toggleSimulationFrozen={props.toggleSimulationFrozen}
             frozen={props.frozen}
@@ -20,7 +23,6 @@ export default function Controls(props) {
             activePaletteFeature={props.activePaletteFeature}
             paletteFeatures={props.paletteFeatures}
           />
-          <ResetSimulation resetSimulation={props.resetSimulation}/>
           <RunTests runTests={props.runTests}/>
         </div>
       </div>
@@ -36,10 +38,18 @@ export default function Controls(props) {
   );
 }
 
+function ResetSimulation(props) {
+  const reset = <FontAwesomeIcon icon={faStepBackward} />
+  return (<button type="button" className={"btn btn-secondary"}
+          onClick={props.resetSimulation}>{reset}</button>);
+}
+
 function ToggleFrozenButton(props) {
+  const play = <FontAwesomeIcon icon={faPlay} />
+  const pause = <FontAwesomeIcon icon={faPause} />
   return (
     <button type="button" className={"btn btn-secondary"} onClick={props.toggleSimulationFrozen}>
-      {props.frozen ? "Frozen" : "Running"}
+      {props.frozen ? pause : play}
     </button>
   );
 }
@@ -57,11 +67,6 @@ function SelectPaletteFeatureButtons(props) {
       {radioButtons}
     </div>
   );
-}
-
-function ResetSimulation(props) {
-  return (<button type="button" className={"btn btn-secondary"}
-          onClick={props.resetSimulation}> Reset </button>);
 }
 
 function RunTests(props) {
