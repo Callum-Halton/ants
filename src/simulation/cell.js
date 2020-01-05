@@ -1,76 +1,137 @@
-import { colorString, colorStringRGBA } from './utils.js';
+import { colorString, colorStringRGBA, Point } from './utils.js'
 
-/*
-class thing(type) {
-  this.type = type;
-  this.amount = amount;
+class Square  {
+  constructor(topLeft, sideLength) {
+    this.tl = new Point(topLeft.x, topLeft.y);
+    this.rb = new Point(topleft.x + sideLength, topLeft.y + sideLength);
+    this.sideLength = sideLength;
+  }
+  
+  getMiddle() {
+    let halfSideLength = this.sideLength / 2;
+    var middle = new Point(topLeft.x + halfSideLength,
+                           topLeft.y + halfSideLength);
+    return middle;
+  }
 }
-*/
+
+// type currently: "resource", "colony", "marker" (and others can be used)
+export class Feature {
+  constructor(type, amount) {
+    this.type = type;
+    this.amount = amount;
+  }
+}
 
 export class Cell {
   constructor(terrain) {
     this._terrain = terrain;
     this.debug = false;
-    this.markers = {};
-    this.things = {
-      //barrier : false,
-      food : {type : "resource", amount : 0},
-    };
+    this.contents = {};
   }
-
-  _forget() {
-    // these forget rates MUST BE SLOWER THAT THE AGENTS FORGET RATE
-    for (let markerID in this.markers) {
-      this.markers[markerID] *= 0.997;
-      if (this.markers[markerID] < this._terrain.markerProfiles[markerID].minimumIntensity) {
-        this.markers[markerID] = 0;
+  
+  getFeature(featureID) {
+    let feature = this.contents[featureID];
+    if (typeof(feature) === "undefined") {
+      return 0;
+    } else {
+      return feature.amount;
+    }
+  }
+  
+  addFeature(featureType, featureID, amount) {
+    let feature = this.contents[featureID];
+    if (typeof(feature) === "undefined") {
+      this.contents[featureID] = new Feature(featureType, amount);
+    } else {
+      feature.amount += amount;
+    }
+  }
+  
+  // Returns the amount that was taken
+  takeFeature(featureID, targetAmount) {
+    let feature = this.contents[featureID];
+    if (typeof(feature) === "undefined") {
+      return 0;
+    } else {
+      if (feature.amount < targetAmount) {
+        let returnAmount = feature.amount;
+        feature.amount = 0;
+        return returnAmount;
+      } else {
+        feature.amount -= targetAmount;
+        return targetAmount;
       }
     }
   }
-
-  draw(ctx, location, cellSize) {
-    let end_x = location.x + cellSize;
-    let end_y = location.y + cellSize;
-    let circle = false;
-    if (this.things.resource > 0) {
-      ctx.fillStyle = colorString([(1 - this.things.resource) * 255,
-                                      255,
-                                      255]);
-      ctx.fillRect(location.x, location.y, end_x, end_y);
-      circle = true
-
-    } else if (this.things.length > 0) {
-
-      for (let thing in this.things) {
-        if (this.things[thing].charAt(0) === "C") {
-          ctx.fillStyle = this._terrain.colonies[parseInt(this.things[thing].slice(1), 10)].color;
-          ctx.fillRect(location.x, location.y, end_x, end_y);
-          circle = true;
+  
+  _forget() {
+    for (let featureID in this.contents) {
+      let feature = this.contents[featureID];
+      if (feature.type === "marker") {
+        let markerProfile = this._terrain.markerProfiles[featureID];
+        // this forget rate MUST BE SLOWER THAT THE AGENTS FORGET RATE
+        feature.amount *= markerProfile.fadeRate;
+        if (feature.amount < markerProfile.minimumIntensity) {
+          feature.amount = 0;
         }
       }
-    } else {
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(location.x, location.y, end_x, end_y);
-      for (let markerID in this.markers) {
-        ctx.fillStyle = colorStringRGBA(this._terrain.markerProfiles[markerID].color, this.markers[markerID]);
-        ctx.fillRect(location.x, location.y, end_x, end_y);
-      }
     }
-
-    if (circle) {
+  }
+  
+  _drawFeature(ctx, cellSquare, featureID) {
+    let feature = this.contents[featureID];
+    let drawCircle = false;
+    if (feature.type === "marker"){
+      ctx.fillStyle = colorStringRGBA(this._terrain.markerProfiles[featureID].color, feature.amount);
+    } else if (feature.type === "resource") {
+      ctx.fillStyle = colorString([(1 - feature.amount) * 255,
+                                255,
+                                255]);
+      drawCircle = true;
+    } else {
+      console.log(featureID);
+      ctx.fillStyle = this._terrain.colonies[parseInt(featureID.slice(1), 10)].cRender;
+      drawCircle = true;
+    }
+    
+    ctx.fillRect(cellSquare.tl.x, cellSquare.tl.y, cellSquare.br.x, cellSquare.br.y);
+    
+    if (drawCircle) {
       ctx.fillStyle = "#000000";
       ctx.beginPath();
-      ctx.arc(location.x + cellSize/2, location.y + cellSize / 2, 5, 0, 2 * Math.PI);
+      let middle = cellSquare.getMiddle();
+      ctx.arc(middle.x, middle.y, 5, 0, 2 * Math.PI);
       ctx.fill();
     }
-
-    // debugging
+  }
+  
+  draw(ctx, location, cellSize) {
+    let cellSquare = new Square(location, cellSize);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(cellSquare.tl.x, cellSquare.tl.y cellSquare.br.x, cellSquare.br.y);
+    
+    let featuresNotDrawn = true;
+    // drawOrder of feature types
+    let drawOrder = ["colony", "resource", "marker"];
+    let drawOrderIndex = 0;
+    while (featuresNotDrawn && drawOrderIndex < drawOrder.length) {
+      let featureType = drawOrder[drawOrderIndex];
+      for (let featureID in this.contents) {
+        let feature = this.contents[featureID];
+        if (feature.type === featureType && feature.amount > 0) {
+          this._drawFeature(ctx, cellSquare, featureID);
+          featuresNotDrawn = false;
+        }
+      }
+      drawOrderIndex++;
+    }
+    
     if (this.debug) {
       ctx.fillStyle = "#000000";
-      ctx.fillRect(location.x, location.y, end_x, end_y);
+      ctx.fillRect(cellSquare.tl.x, cellSquare.tl.y cellSquare.br.x, cellSquare.br.y);
       this.debug = false;
     }
-    //
 
     this._forget();
   }
@@ -94,31 +155,32 @@ export class CellLoc {
 /*
 Architecture scratch-pad
 
-markers_indexes = ["r0", "..."]
-home_indexes = ["c0", "c1"]
-
-markers: {
-  "r0" : 3,
-  "r1" : 2,
-  "h2" : 4,
-  "t3" : 2,
-}
 contents: {
   "r0" : {
-          type: "marker",
+          type: "resource",
           amount: 1.0
          }
   "c0" : {
-          type : "home",
+          type : "colony",
           amount : 1,
          }
   "c1" : {
-          type : "home",
+          type : "colony",
           amount : 1,
          }
   "food": {
            type : "resource",
            amount : 1.5,
           }
+}
+
+markers: {
+  r0 : 1
+}
+colonies : {
+  c0 : 1
+}
+resources : {
+  food : 1
 }
 */

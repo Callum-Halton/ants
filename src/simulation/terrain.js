@@ -1,6 +1,6 @@
 import { Point } from './utils.js';
 import Colony from './colony.js';
-import { Cell, CellWithLocation, CellLoc } from './cell.js';
+import { Cell, CellWithLocation, CellLoc, Feature } from './cell.js';
 import CogHelper from './cogHelper.js';
 
 export default class Terrain {
@@ -15,6 +15,7 @@ export default class Terrain {
   }
 
   reset() {
+    this.agentsCount = 0;
     this._widthInCells = Math.ceil(this.width/this._cellSize);
     this._heightInCells = Math.ceil(this.height/this._cellSize);
     this._grid = new Array(this._heightInCells);
@@ -73,13 +74,13 @@ export default class Terrain {
                                    },
       },
     };
-    colony = new Colony(this, colonySpec);
-    this.colonies.push(colony);
+    //colony = new Colony(this, colonySpec);
+    //this.colonies.push(colony);
 
     // Resources for debugging
-    const resources = [{loc: this._pointToCellLoc(new Point(500, 500)), amount: 1.0}];
-    for (let resource = 0; resource < resources.length; resource++) {
-      this._grid[resources[resource].loc.row][resources[resource].loc.col].things.resource = resources[resource].amount;
+    const resources = [{loc: this._pointToCellLoc(new Point(500, 500)), amount: 1}];
+    for (let resource of resources) {
+      this._grid[resource.loc.row][resource.loc.col].contents.food = new Feature("resource", resource.amount);
     }
     //
   }
@@ -112,62 +113,29 @@ export default class Terrain {
   }
 
   getAgentsCount() {
-    let agentsCount = 0;
-    for (const colony of this.colonies) {
-      agentsCount += colony.agentsCount();
-    }
-    return agentsCount;
+    return this.agentsCount;
   }
 
-  addThing(location, thingID, amount, thingDefault) {
+  getFeature(location, featureID) {
     let cellLoc = this._pointToCellLoc(location);
-    let things = this._grid[cellLoc.row][cellLoc.col].things;
-    if (typeof(things[thingID]) === "undefined") {
-      things[thingID] = thingDefault;
-    } else {
-      things[thingID].amount += amount;
-    }
+    return this._grid[cellLoc.row][cellLoc.col].getFeature(featureID);
   }
-
-  addMarker(location, markerID, amount) {
+  
+  addFeature(location, featureType, featureID, amount) {
     let cellLoc = this._pointToCellLoc(location);
-    let markers = this._grid[cellLoc.row][cellLoc.col].markers;
-    if (typeof(markers[markerID]) === "undefined") {
-      markers[markerID] = amount;
-    } else {
-      markers[markerID] += amount;
-    }
+    this._grid[cellLoc.row][cellLoc.col].addFeature(featureType, featureID, amount);
   }
+  
 
+  takeFeature(location, featureID, targetAmount) {
+    let cellLoc = this._pointToCellLoc(location);
+    return this._grid[cellLoc.row][cellLoc.col].takeFeature(featureID, targetAmount);
+  }
+  
   // Add a barrier the occupies all the cells that line passes through
   addBarrier(line) {
   }
 
-  // Adds the specific amount of resource to the cell that the location
-  // falls into. Returns the amount of resource that was added.
-  addResource(location, amount) {
-  }
-
-  // Remove up to the target_amount of resource from the cell that
-  // location falls into. Once the cell is empty of resource, no more can
-  // be removed. Returns the amount of resource removed.
-  removeResource(location, targetAmount) {
-    let cellLoc = this._pointToCellLoc(location);
-    let cellThings = this._grid[cellLoc.row][cellLoc.col].things;
-    let amountRemoved;
-    if (cellThings.resource <= targetAmount) {
-      amountRemoved = cellThings.resource;
-    } else {
-      amountRemoved = targetAmount;
-    }
-    cellThings.resource -= amountRemoved;
-    return amountRemoved;
-  }
-
-  isMyColonyHereHere(location, colonyID) {
-    let cellLoc = this._pointToCellLoc(location);
-    return (colonyID in this._grid[cellLoc.row][cellLoc.col]['things']);
-  }
 
   * _localCellIteratorGenerator(location, localBounds) {
     let cellLoc = this._pointToCellLoc(location);
@@ -197,11 +165,11 @@ export default class Terrain {
              multiplications.
   */
   // features is an object with a property for each feature that is being searched for e.g.
-  // { things: {C0 : []}, markers: {H0 : null} }
+  // { destinations : { food : [] }, markers : { H0 : null} }
   getLocalFeatures(/* Point */ location, /* features object */ features, localBounds) {
     let cogHelpers = {};
-    for (let marker in features.markers) {
-      cogHelpers[marker] =  new CogHelper(location, marker);
+    for (let markerID in features.markers) {
+        cogHelpers[markerID] =  new CogHelper(location, markerID);
     }
 
     let cellWithLocationIterator = this._localCellIteratorGenerator(location, localBounds);
@@ -209,12 +177,10 @@ export default class Terrain {
       for (let cogHelperKey in cogHelpers) {
         cogHelpers[cogHelperKey].update(cellWithLocation);
       }
-      for (let thing in features.things) {
-        let thingVal = cellWithLocation.cell.things[thing];
-        if (typeof(thingVal) !== "undefined") {
-          if (thingVal > 0) {
-            features.things[thing].push(cellWithLocation.loc);
-          }
+      for (let desitinationID in features.destinations) {
+        let destinationValue = cellWithLocation.cell.getFeature(desitinationID);
+        if (destinationValue > 0) {
+          features.destinations[desitinationID].push(cellWithLocation.loc);
         }
       }
     }
@@ -266,8 +232,9 @@ export default class Terrain {
       ctx.stroke();
     }
 
+    this.agentsCount = 0;
     for (let colony of this.colonies) {
-      colony.draw(ctx, agentsFrozen);
+      this.agentsCount += colony.draw(ctx, agentsFrozen);
     }
 
   }

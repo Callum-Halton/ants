@@ -1,20 +1,29 @@
 import Agent from './agent.js';
 import { colorString } from './utils.js';
 
+class MarkerProfile {
+  constructor(color, minimumIntensity, fadeRate) {
+    this.color = color;
+    this.minimumIntensity = minimumIntensity;
+    this.fadeRate = fadeRate;
+  }
+}
+
 export default class Colony {
   constructor(terrain, spec) {
     // Don't copy and keep a reference to spec because spec might change later.
     this.terrain = terrain;
     this.loc = spec.loc;
     this.baseID = spec.id;
-    this.id = 'C' + this.id;
+    this.id = 'C' + spec.id.toString();
     this.color = spec.color;
+    this.cRender = colorString(this.color);
     this.maxAgents = spec.maxAgents;
     this.agentsSpawned = 0;
     this.meanStepsBetweenSpawns = spec.meanStepsBetweenSpawns;
     this.stepsUntilSpawn = 1;
     this.agents = [];
-    this.terrain.changeFeature(this.loc, "things", this.id, 1);
+    this.terrain.addFeature(this.loc, "colony", this.id, 1);
 
     this.agent = {
       markerIDs                : {
@@ -31,10 +40,10 @@ export default class Colony {
     };
 
     for (let marker in this.agent.markerIDs) {
-      this.terrain.addMarkerProfile(this.agent.markerIDs[marker], {
-        color: spec.agent.markerColors[marker],
-        minimumIntensity: 0.01,
-      });
+      this.terrain.addMarkerProfile(
+        this.agent.markerIDs[marker], 
+        new MarkerProfile(spec.agent.markerColors[marker], 0.01, 0.997)
+      );
     }
   }
 
@@ -62,5 +71,6 @@ export default class Colony {
     for (let agent of this.agents) {
       agent.draw(ctx, agentsFrozen);
     }
+    return this.agents.length;
   }
 }

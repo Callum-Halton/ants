@@ -8,6 +8,10 @@ export default class Agent {
     this._colony = colony;
     this._loc = new Point(this._colony.loc.x, this._colony.loc.y);
     this._direction = Math.random() * 360;
+    this._resourceWallet = {
+                            food: 0,
+                            buildingMaterial: 0,
+                           };
     this._carriedResource = 0;
     this._selected = false;
     this._memories = {
@@ -125,16 +129,17 @@ export default class Agent {
     direction by no more than a fixed amount on each step.
     */
 
-    let features = {things : {}, markers : {}};
+    let features = {destinations : {}, markers : {}};
     let remainingCapacity = this._colony.agent.resourceCarryingCapacity -
                             this._carriedResource;
     //console.log(remainingCapacity);
     if (remainingCapacity) { // head for resource
       // First, try to consume resource
       // TODO: limit rate that agents can remove resource
-      let removedResource = this._terrain.removeResource(this._loc,
+      let removedResource = this._terrain.takeFeature(this._loc, "food",
                                                          remainingCapacity);
       this._carriedResource += removedResource;
+      this._resourceWallet.food += removedResource;
       if (this._carriedResource ===
           this._colony.agent.resourceCarryingCapacity) {
         // Just got full
@@ -142,17 +147,14 @@ export default class Agent {
       } else if (removedResource === 0) {
         // There ain't no resource here, so let's look for some ...
         let resourceMarkerID = this._colony.agent.markerIDs.resource;
-        features.things.resource = [];
+        features.destinations.food = [];
         features.markers[resourceMarkerID] = null;
         this._terrain.getLocalFeatures(this._loc, features, this._colony.agent.localBounds);
-        /*if (features.things.resource.length > 0) {
-          console.log(features);
-        }*/
-        if (features.things.resource.length > 0) {
+        if (features.destinations.food.length > 0) {
           // Can see resource, so move towards it
           let closestResource = {
                   loc: null, dist: this._colony.agent.vision + 10};
-          features.things.resource.forEach(resourceLoc => {
+          features.destinations.food.forEach(resourceLoc => {
             let distanceToResource = Math.hypot(resourceLoc.x - this._loc.x,
                                                 resourceLoc.y - this._loc.y);
             if (distanceToResource < closestResource.dist) {
@@ -160,7 +162,7 @@ export default class Agent {
             }
           });
           if (closestResource.loc == null) {
-            closestResource.loc = features.things.resource[0];
+            closestResource.loc = features.destinations.food[0];
           }
           this._direction = this._angleTo(closestResource.loc);
         } else {
@@ -178,17 +180,18 @@ export default class Agent {
     } else { // head for home
       let homeMarkerID = this._colony.agent.markerIDs.home;
       // Is this home? ...
-      if (this._terrain.isMyColonyHereHere(this._loc, this._colony.id)) {
+      if (this._terrain.getFeature(this._loc, this._colony.id)) {
         this._carriedResource = 0;
+        this._resourceWallet.food = 0;
         this._memories.home = 0.2;
       } else {
         //Let's look for home ...
-        features.things[this._colony.id] = [];
+        features.destinations[this._colony.id] = [];
         features.markers[homeMarkerID] = null;
         this._terrain.getLocalFeatures(this._loc, features, this._colony.agent.localBounds);
-        if (features.things.home.length > 0) {
+        if (features.destinations[this._colony.id].length > 0) {
           // Can see home, so move towards it
-          this._direction = this._angleTo(features.things.home[0]);
+          this._direction = this._angleTo(features.destinations[this._colony.id][0]);
         } else {
           // Cannot see home, so let's try smelling for it ...
           let directionUpHomeMarkerGradient =
@@ -231,7 +234,7 @@ export default class Agent {
     for (let thing in this._memories) {
       let markerID = this._colony.agent.markerIDs[thing];
       if (this._memories[thing]) {
-        this._terrain.changeFeature(this._loc, "markers", markerID, this._memories[thing]);
+        this._terrain.addFeature(this._loc, "marker", markerID, this._memories[thing]);
         this._memories[thing] *= 0.995;
         if (this._memories[thing] < this._terrain.markerProfiles[markerID].minimumIntensity) {
           this._memories[thing] = 0;

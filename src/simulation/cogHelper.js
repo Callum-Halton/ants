@@ -9,12 +9,10 @@ export default class CogHelper {
   }
 
   update(/* CellWithLocation */ cellWithLocation) {
-   let markerValue = cellWithLocation.cell.markers[this.markerID];
-   if (typeof(markerValue) !== "undefined") {
+    let markerValue = cellWithLocation.cell.getFeature(this.markerID);
     this._nonNormalizedCog.x += cellWithLocation.loc.x * markerValue;
     this._nonNormalizedCog.y += cellWithLocation.loc.y * markerValue;
     this._total += markerValue;
-   }
   }
 
   getNormalizedCog() {
