@@ -33,8 +33,8 @@ export default class Simulation extends React.Component {
       cellSize: 20,
       frozen: true,
       activePaletteFeature: {
-                             featureBucket : "things",
-                             feature       : "resource",
+                             featureType : "resource",
+                             featureID   : "food",
                             },
       paletteFeatureAmount: 0.1,
     };
@@ -48,7 +48,7 @@ export default class Simulation extends React.Component {
     this.selectPaletteFeatureAmount = this.selectPaletteFeatureAmount.bind(this);
     this.resetSimulation = this.resetSimulation.bind(this);
     this.runTests = this.runTests.bind(this);
-    this.paletteFeatures = {things: ["resource"], markers:["0R", "0H", "1R", "1H"]};
+    this.paletteFeatures = {resource: ["food"], barrier: ["wall"], marker: ["R0", "H0", "R1", "H1"]};
     this.times = [];
     this.fps = null;
     this.framesLeftToShowNotice = 3 * 30;
@@ -62,7 +62,7 @@ export default class Simulation extends React.Component {
     this.ctx.fillStyle = "#000000";
     this.ctx.font = "30px Courier";
     const xPos = this.state.width-240;
-    // this.ctx.fillText(this.terrain.getAgentsCount() + " AGENTS", xPos, this.state.height-50);
+    this.ctx.fillText(this.terrain.getAgentsCount() + " AGENTS", xPos, this.state.height-50);
     this.ctx.fillText(this.fps + " FPS", xPos, this.state.height-20);
   }
 
@@ -110,11 +110,11 @@ export default class Simulation extends React.Component {
     }));
   }
 
-  selectPaletteFeature(featureBucket, feature) {
+  selectPaletteFeature(featureBucket, featureVal) {
     this.setState({
       activePaletteFeature: {
-                             featureBucket : featureBucket,
-                             feature       : feature,
+                             featureType : featureBucket,
+                             featureID   : featureVal,
                             },
     });
   }
@@ -136,8 +136,8 @@ export default class Simulation extends React.Component {
     let clickPoint = {};
     clickPoint.x = nativeEvent.offsetX;
     clickPoint.y = nativeEvent.offsetY;
-    this.terrain.changeFeature(clickPoint, this.state.activePaletteFeature.featureBucket,
-      this.state.activePaletteFeature.feature, this.state.paletteFeatureAmount);
+    this.terrain.addFeature(clickPoint, this.state.activePaletteFeature.featureType,
+      this.state.activePaletteFeature.featureID, this.state.paletteFeatureAmount);
   }
   
   resetSimulation() {

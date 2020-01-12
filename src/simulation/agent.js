@@ -129,14 +129,13 @@ export default class Agent {
     direction by no more than a fixed amount on each step.
     */
 
-    let features = {destinations : {}, markers : {}};
+    
     let remainingCapacity = this._colony.agent.resourceCarryingCapacity -
                             this._carriedResource;
-    //console.log(remainingCapacity);
     if (remainingCapacity) { // head for resource
       // First, try to consume resource
       // TODO: limit rate that agents can remove resource
-      let removedResource = this._terrain.takeFeature(this._loc, "food",
+      let removedResource = this._terrain.takeFeature(this._loc, "resource", "food",
                                                          remainingCapacity);
       this._carriedResource += removedResource;
       this._resourceWallet.food += removedResource;
@@ -147,14 +146,14 @@ export default class Agent {
       } else if (removedResource === 0) {
         // There ain't no resource here, so let's look for some ...
         let resourceMarkerID = this._colony.agent.markerIDs.resource;
-        features.destinations.food = [];
-        features.markers[resourceMarkerID] = null;
+        let features = { resource : { food : [] }, marker : {}, };
+        features.marker[resourceMarkerID] = null;
         this._terrain.getLocalFeatures(this._loc, features, this._colony.agent.localBounds);
-        if (features.destinations.food.length > 0) {
+        if (features.resource.food.length > 0) {
           // Can see resource, so move towards it
           let closestResource = {
                   loc: null, dist: this._colony.agent.vision + 10};
-          features.destinations.food.forEach(resourceLoc => {
+          features.resource.food.forEach(resourceLoc => {
             let distanceToResource = Math.hypot(resourceLoc.x - this._loc.x,
                                                 resourceLoc.y - this._loc.y);
             if (distanceToResource < closestResource.dist) {
@@ -162,13 +161,13 @@ export default class Agent {
             }
           });
           if (closestResource.loc == null) {
-            closestResource.loc = features.destinations.food[0];
+            closestResource.loc = features.resource.food[0];
           }
           this._direction = this._angleTo(closestResource.loc);
         } else {
           // Cannot see resource, so let's try smelling for some ...
           let directionUpResourceMarkerGradient =
-              this._upGradientDirection(features.markers[resourceMarkerID]);
+              this._upGradientDirection(features.marker[resourceMarkerID]);
           if (directionUpResourceMarkerGradient) {
             this._direction = directionUpResourceMarkerGradient;
           } else {
@@ -180,22 +179,23 @@ export default class Agent {
     } else { // head for home
       let homeMarkerID = this._colony.agent.markerIDs.home;
       // Is this home? ...
-      if (this._terrain.getFeature(this._loc, this._colony.id)) {
+      if (this._terrain.getFeature(this._loc, "colony", this._colony.id)) {
         this._carriedResource = 0;
         this._resourceWallet.food = 0;
         this._memories.home = 0.2;
       } else {
         //Let's look for home ...
-        features.destinations[this._colony.id] = [];
-        features.markers[homeMarkerID] = null;
+        let features = { colony : {}, marker : {}, };
+        features.colony[this._colony.id] = [];
+        features.marker[homeMarkerID] = null;
         this._terrain.getLocalFeatures(this._loc, features, this._colony.agent.localBounds);
-        if (features.destinations[this._colony.id].length > 0) {
+        if (features.colony[this._colony.id].length > 0) {
           // Can see home, so move towards it
-          this._direction = this._angleTo(features.destinations[this._colony.id][0]);
+          this._direction = this._angleTo(features.colony[this._colony.id][0]);
         } else {
           // Cannot see home, so let's try smelling for it ...
           let directionUpHomeMarkerGradient =
-              this._upGradientDirection(features.markers[homeMarkerID]);
+              this._upGradientDirection(features.marker[homeMarkerID]);
           if (directionUpHomeMarkerGradient) {
             this._direction = directionUpHomeMarkerGradient;
           } else {
@@ -236,7 +236,7 @@ export default class Agent {
       if (this._memories[thing]) {
         this._terrain.addFeature(this._loc, "marker", markerID, this._memories[thing]);
         this._memories[thing] *= 0.995;
-        if (this._memories[thing] < this._terrain.markerProfiles[markerID].minimumIntensity) {
+        if (this._memories[thing] < this._terrain.featureProfiles[markerID].minimumIntensity) {
           this._memories[thing] = 0;
         }
       }

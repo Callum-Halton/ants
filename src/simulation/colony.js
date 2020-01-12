@@ -14,10 +14,9 @@ export default class Colony {
     // Don't copy and keep a reference to spec because spec might change later.
     this.terrain = terrain;
     this.loc = spec.loc;
-    this.baseID = spec.id;
-    this.id = 'C' + spec.id.toString();
+    this.baseID = spec.baseID;
+    this.id = 'C' + this.baseID;
     this.color = spec.color;
-    this.cRender = colorString(this.color);
     this.maxAgents = spec.maxAgents;
     this.agentsSpawned = 0;
     this.meanStepsBetweenSpawns = spec.meanStepsBetweenSpawns;
@@ -27,8 +26,8 @@ export default class Colony {
 
     this.agent = {
       markerIDs                : {
-                                  resource : 'R' + this.id,
-                                  home     : 'H' + this.id,
+                                  resource : 'R' + this.baseID,
+                                  home     : 'H' + this.baseID,
                                  },
       colorRender              : colorString(spec.agent.color),
       vision                   : spec.agent.vision,
@@ -39,12 +38,13 @@ export default class Colony {
       speed                    : spec.agent.speed,
     };
 
-    for (let marker in this.agent.markerIDs) {
-      this.terrain.addMarkerProfile(
-        this.agent.markerIDs[marker], 
-        new MarkerProfile(spec.agent.markerColors[marker], 0.01, 0.997)
+    for (let markerType in this.agent.markerIDs) {
+      this.terrain.addFeatureProfile(
+        this.agent.markerIDs[markerType], 
+        new MarkerProfile(spec.agent.markerColors[markerType], 0.01, 0.997)
       );
     }
+    this.terrain.addFeatureProfile(this.id, { cRender : colorString(this.color) });
   }
 
   agentsCount() {

@@ -9,7 +9,7 @@ export default class CogHelper {
   }
 
   update(/* CellWithLocation */ cellWithLocation) {
-    let markerValue = cellWithLocation.cell.getFeature(this.markerID);
+    let markerValue = cellWithLocation.cell.getFeature("marker", this.markerID);
     this._nonNormalizedCog.x += cellWithLocation.loc.x * markerValue;
     this._nonNormalizedCog.y += cellWithLocation.loc.y * markerValue;
     this._total += markerValue;

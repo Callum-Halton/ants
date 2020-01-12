@@ -1,6 +1,6 @@
 import { Point } from './utils.js';
 import Colony from './colony.js';
-import { Cell, CellWithLocation, CellLoc, Feature } from './cell.js';
+import { Cell, CellWithLocation, CellLoc } from './cell.js';
 import CogHelper from './cogHelper.js';
 
 export default class Terrain {
@@ -29,12 +29,11 @@ export default class Terrain {
     /*this._homeLocation = new Point(Math.random() * (this.width - 100) + 50,
                                    Math.random() * (this.height - 100) + 50);*/
 
-    this.markerProfiles = {};
-    // use 0.01
+    this.featureProfiles = {};
     this.colonies = [];
 
     let colonySpec = {
-      loc                        : new Point(50, 50),
+      loc                        : new Point(150, 50),
       baseID                     : '0',
       color                      : [255, 255, 0],
       maxAgents                  : 1000,
@@ -56,7 +55,7 @@ export default class Terrain {
     this.colonies.push(colony);
 
     colonySpec = {
-      loc                        : new Point(900, 900),
+      loc                        : new Point(750, 50),
       baseID                     : '1',
       color                      : [255, 0, 0],
       maxAgents                  : 1000,
@@ -74,13 +73,13 @@ export default class Terrain {
                                    },
       },
     };
-    //colony = new Colony(this, colonySpec);
-    //this.colonies.push(colony);
+    colony = new Colony(this, colonySpec);
+    this.colonies.push(colony);
 
     // Resources for debugging
     const resources = [{loc: this._pointToCellLoc(new Point(500, 500)), amount: 1}];
     for (let resource of resources) {
-      this._grid[resource.loc.row][resource.loc.col].contents.food = new Feature("resource", resource.amount);
+      this._grid[resource.loc.row][resource.loc.col].addFeature("resource", "food", 1);
     }
     //
   }
@@ -108,17 +107,17 @@ export default class Terrain {
     return bounds;
   }
 
-  addMarkerProfile(markerID, markerProfile) {
-    this.markerProfiles[markerID] = markerProfile;
+  addFeatureProfile(featureID, featureProfile) {
+    this.featureProfiles[featureID] = featureProfile;
   }
 
   getAgentsCount() {
     return this.agentsCount;
   }
 
-  getFeature(location, featureID) {
+  getFeature(location, featureType, featureID) {
     let cellLoc = this._pointToCellLoc(location);
-    return this._grid[cellLoc.row][cellLoc.col].getFeature(featureID);
+    return this._grid[cellLoc.row][cellLoc.col].getFeature(featureType, featureID);
   }
   
   addFeature(location, featureType, featureID, amount) {
@@ -127,9 +126,9 @@ export default class Terrain {
   }
   
 
-  takeFeature(location, featureID, targetAmount) {
+  takeFeature(location, featureType, featureID, targetAmount) {
     let cellLoc = this._pointToCellLoc(location);
-    return this._grid[cellLoc.row][cellLoc.col].takeFeature(featureID, targetAmount);
+    return this._grid[cellLoc.row][cellLoc.col].takeFeature(featureType, featureID, targetAmount);
   }
   
   // Add a barrier the occupies all the cells that line passes through
@@ -165,28 +164,36 @@ export default class Terrain {
              multiplications.
   */
   // features is an object with a property for each feature that is being searched for e.g.
-  // { destinations : { food : [] }, markers : { H0 : null} }
+  // { resource: { food : [] }, colony : { C0 : [] }, marker : { H0 : null} }
   getLocalFeatures(/* Point */ location, /* features object */ features, localBounds) {
     let cogHelpers = {};
-    for (let markerID in features.markers) {
-        cogHelpers[markerID] =  new CogHelper(location, markerID);
+  
+    if (typeof(features.marker) !== "undefined") {
+      for (let markerID in features.marker) {
+          cogHelpers[markerID] =  new CogHelper(location, markerID);
+      }
     }
 
     let cellWithLocationIterator = this._localCellIteratorGenerator(location, localBounds);
     for(let cellWithLocation of cellWithLocationIterator) {
-      for (let cogHelperKey in cogHelpers) {
-        cogHelpers[cogHelperKey].update(cellWithLocation);
-      }
-      for (let desitinationID in features.destinations) {
-        let destinationValue = cellWithLocation.cell.getFeature(desitinationID);
-        if (destinationValue > 0) {
-          features.destinations[desitinationID].push(cellWithLocation.loc);
+      for (let featureType in features) {
+        if (featureType === "marker") {
+          for (let cogHelperKey in cogHelpers) {
+            cogHelpers[cogHelperKey].update(cellWithLocation);
+          }
+        } else {
+          for (let desitinationID in features[featureType]) {
+            let destinationValue = cellWithLocation.cell.getFeature(featureType, desitinationID);
+            if (destinationValue > 0) {
+              features[featureType][desitinationID].push(cellWithLocation.loc);
+            }
+          }
         }
       }
     }
 
-    for (let marker in features.markers) {
-      features.markers[marker] = cogHelpers[marker].getNormalizedCog();
+    for (let cogHelperKey in cogHelpers) {
+      features.marker[cogHelperKey] = cogHelpers[cogHelperKey].getNormalizedCog();
     }
   }
 
@@ -211,7 +218,7 @@ export default class Terrain {
       for (let col = 0; col < this._widthInCells; col++) {
         let location = new Point(x, y);
         let cell = this._grid[row][col];
-        cell.draw(ctx, location, this._cellSize);
+        cell.draw(ctx, location, this._cellSize, agentsFrozen);
         x = x + this._cellSize;
       }
       y = y + this._cellSize;
@@ -233,9 +240,13 @@ export default class Terrain {
     }
 
     this.agentsCount = 0;
+    let agentCounts = { C0 : 0, C1 : 0};
     for (let colony of this.colonies) {
-      this.agentsCount += colony.draw(ctx, agentsFrozen);
+      let val = colony.draw(ctx, agentsFrozen);
+      this.agentsCount += val;
+      agentCounts[colony.id] += val;
     }
+    // console.log(agentCounts);
 
   }
 }
