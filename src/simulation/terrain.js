@@ -119,18 +119,17 @@ export default class Terrain {
     let cellLoc = this._pointToCellLoc(location);
     return this._grid[cellLoc.row][cellLoc.col].getFeature(featureType, featureID);
   }
-  
+
   addFeature(location, featureType, featureID, amount) {
     let cellLoc = this._pointToCellLoc(location);
     this._grid[cellLoc.row][cellLoc.col].addFeature(featureType, featureID, amount);
   }
-  
 
   takeFeature(location, featureType, featureID, targetAmount) {
     let cellLoc = this._pointToCellLoc(location);
     return this._grid[cellLoc.row][cellLoc.col].takeFeature(featureType, featureID, targetAmount);
   }
-  
+
   // Add a barrier the occupies all the cells that line passes through
   addBarrier(line) {
   }
@@ -167,7 +166,7 @@ export default class Terrain {
   // { resource: { food : [] }, colony : { C0 : [] }, marker : { H0 : null} }
   getLocalFeatures(/* Point */ location, /* features object */ features, localBounds) {
     let cogHelpers = {};
-  
+
     if (typeof(features.marker) !== "undefined") {
       for (let markerID in features.marker) {
           cogHelpers[markerID] =  new CogHelper(location, markerID);

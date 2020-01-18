@@ -129,7 +129,6 @@ export default class Agent {
     direction by no more than a fixed amount on each step.
     */
 
-    
     let remainingCapacity = this._colony.agent.resourceCarryingCapacity -
                             this._carriedResource;
     if (remainingCapacity) { // head for resource

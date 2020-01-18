@@ -6,7 +6,7 @@ import { Button, TextField } from '@material-ui/core';
 
 
 export default class Controls extends React.Component {
-  
+
   render() {
     let featureButtonSets = [];
     for (let featureType in this.props.paletteFeatures) {
@@ -104,7 +104,7 @@ function RunTests(props) {
               activePaletteFeature={this.props.activePaletteFeature}
               paletteFeatures={this.props.paletteFeatures.things}
             />
-            
+
             <SelectPaletteFeatureButtons
               featureBucket={"markers"}
               selectPaletteFeature={this.props.selectPaletteFeature}

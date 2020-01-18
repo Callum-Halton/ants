@@ -1,20 +1,5 @@
 import { colorString, colorStringRGBA, Point } from './utils.js';
 
-class Square  {
-  constructor(topLeft, sideLength) {
-    this.tl = new Point(topLeft.x, topLeft.y);
-    this.rb = new Point(topLeft.x + sideLength, topLeft.y + sideLength);
-    this.sideLength = sideLength;
-  }
-  
-  getMiddle() {
-    let halfSideLength = this.sideLength / 2;
-    var middle = new Point(this.topLeft.x + halfSideLength,
-                           this.topLeft.y + halfSideLength);
-    return middle;
-  }
-}
-
 export class Cell {
   constructor(terrain) {
     this._terrain = terrain;
@@ -28,13 +13,13 @@ export class Cell {
       colony   : {},
       barrier  : {},
     };
-    
+
     this.contentsCounts = {};
     for (let featureType in this.contents) {
       this.contentsCounts[featureType] = 0;
     }
   }
-  
+
   _doIhaveStuff() {
     let counts = this.contentsCounts;
     for (let featureType in counts) {
@@ -44,7 +29,7 @@ export class Cell {
     }
     return false;
   }
-  
+
   getFeature(featureType, featureID) {
     let amount = this.contents[featureType][featureID];
     if (typeof(amount) === "undefined") {
@@ -53,7 +38,7 @@ export class Cell {
       return amount;
     }
   }
-  
+
   addFeature(featureType, featureID, amount) {
     let featureBucket = this.contents[featureType];
     if (typeof(featureBucket[featureID]) === "undefined") {
@@ -69,7 +54,7 @@ export class Cell {
     }
     this.hasStuff = true;
   }
-  
+
   // Returns the amount that was taken
   takeFeature(featureType, featureID, targetAmount) {
     let featureBucket = this.contents[featureType];
@@ -91,7 +76,7 @@ export class Cell {
       }
     }
   }
-  
+
   _forget() {
     let markers = this.contents.marker;
     for (let markerID in markers) {
@@ -108,12 +93,12 @@ export class Cell {
     let endPoint = new Point(location.x + cellSize, location.y + cellSize);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(location.x, location.y, endPoint.x, endPoint.y);
-    
+
     if (this.hasStuff) {
       let drawCircle = false;
       let contents = this.contents;
       let counts = this.contentsCounts;
-      
+
       if (counts["colony"] > 0) {
         drawCircle = true;
         for (let colonyID in contents.colony) {
@@ -130,7 +115,7 @@ export class Cell {
         for (let barrierID in contents.barrier) {
           ctx.fillStyle = colorStringRGBA([0, 0, 0], contents.barrier[barrierID]);
           ctx.fillRect(location.x, location.y, endPoint.x, endPoint.y);
-        }      
+        }
       } else {
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(location.x, location.y, endPoint.x, endPoint.y);
@@ -141,7 +126,7 @@ export class Cell {
           ctx.fillRect(location.x, location.y, endPoint.x, endPoint.y);
         }
       }
-      
+
       if (drawCircle) {
         ctx.fillRect(location.x, location.y, endPoint.x, endPoint.y);
         ctx.fillStyle = "#000000";
@@ -149,7 +134,7 @@ export class Cell {
         ctx.arc(location.x + (cellSize / 2), location.y + (cellSize / 2), 5, 0, 2 * Math.PI);
         ctx.fill();
       }
-      
+
       if (!frozen) {
         this._forget();
       }
@@ -221,9 +206,9 @@ resources : {
       ctx.fillStyle = this._terrain.colonies[parseInt(featureID.slice(1), 10)].cRender;
       drawCircle = true;
     }
-    
+
     ctx.fillRect(cellSquare.tl.x, cellSquare.tl.y, cellSquare.br.x, cellSquare.br.y);
-    
+
     if (drawCircle) {
       ctx.fillStyle = "#000000";
       ctx.beginPath();
@@ -233,12 +218,12 @@ resources : {
     }
   }
   */
-  
+
     /*
     let cellSquare = new Square(location, cellSize);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(cellSquare.tl.x, cellSquare.tl.y cellSquare.br.x, cellSquare.br.y);
-    
+
     let featuresNotDrawn = true;
     // drawOrder of feature types
     let drawOrder = ["colony", "resource", "marker"];
@@ -255,7 +240,7 @@ resources : {
       drawOrderIndex++;
     }
     */
-    
+
       /*
   _hasFeaturesOfType(featureType) {
     let featureBucket = this.contents[featureType];

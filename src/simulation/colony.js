@@ -40,7 +40,7 @@ export default class Colony {
 
     for (let markerType in this.agent.markerIDs) {
       this.terrain.addFeatureProfile(
-        this.agent.markerIDs[markerType], 
+        this.agent.markerIDs[markerType],
         new MarkerProfile(spec.agent.markerColors[markerType], 0.01, 0.997)
       );
     }
