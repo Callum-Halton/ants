@@ -1,30 +1,10 @@
 import React from 'react';
 import Controls from './controls';
-import Terrain from './terrain.js';
-import Test from './test.js';
+import Terrain from './terrain';
+import Test from './test';
+import PureCanvas from './PureCanvas';
 
-class PureCanvas extends React.Component {
-
-  shouldComponentUpdate() {
-    return false;
-  }
-
-  render() {
-    return (
-      <canvas
-        className="canvas"
-        onClick={(event) => this.props.canvasClick(event.nativeEvent)}
-        width={this.props.width}
-        height={this.props.height}
-        ref={node =>
-          node ? this.props.contextRef(node.getContext('2d')) : null
-        }
-      />
-    );
-  }
-}
-
-export default class Simulation extends React.Component {
+class Simulation extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -146,8 +126,21 @@ export default class Simulation extends React.Component {
 
   render() {
     return (
-      <div className="row">
-        <div className="col">
+      <div>
+        <div id="left-controls">
+          <Controls
+            toggleSimulationFrozen={this.toggleSimulationFrozen}
+            frozen={this.state.frozen}
+            selectPaletteFeature={this.selectPaletteFeature}
+            activePaletteFeature={this.state.activePaletteFeature}
+            paletteFeatures={this.paletteFeatures}
+            selectPaletteFeatureAmount={this.selectPaletteFeatureAmount}
+            paletteFeatureAmount={this.state.paletteFeatureAmount}
+            resetSimulation={this.resetSimulation}
+            runTests={this.runTests}
+          />
+        </div>
+        <div id="canvas-div">
           <PureCanvas
             canvasClick={this.canvasClick}
             width={this.state.width}
@@ -155,19 +148,9 @@ export default class Simulation extends React.Component {
             contextRef={this.saveContext}
           />
         </div>
-        <Controls
-          toggleSimulationFrozen={this.toggleSimulationFrozen}
-          frozen={this.state.frozen}
-          selectPaletteFeature={this.selectPaletteFeature}
-          activePaletteFeature={this.state.activePaletteFeature}
-          paletteFeatures={this.paletteFeatures}
-          selectPaletteFeatureAmount={this.selectPaletteFeatureAmount}
-          paletteFeatureAmount={this.state.paletteFeatureAmount}
-          resetSimulation={this.resetSimulation}
-          runTests={this.runTests}
-        />
       </div>
     );
   }
 }
 
+export default Simulation;

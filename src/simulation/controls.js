@@ -2,8 +2,20 @@ import React from 'react';
 import FeatureBar from './progBar.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlay, faPause, faStepBackward } from '@fortawesome/free-solid-svg-icons';
-import { Button, TextField } from '@material-ui/core';
+import { Button, Fab, TextField, createMuiTheme,
+         MuiThemeProvider, RadioGroup, Radio,
+         FormControlLabel} from '@material-ui/core';
 
+const theme = createMuiTheme({
+  overrides: {
+    MuiFab: {
+      root: {
+        margin: "10px",
+        padding: "10px"
+      }
+    }
+  }
+});
 
 export default class Controls extends React.Component {
 
@@ -21,78 +33,74 @@ export default class Controls extends React.Component {
       );
     }
     return (
-      <div className="col">
-        <div className="row">
-          <div className="col">
-              <Button variant="contained" color="primary">
-      Hello World
-    </Button>
-            <ResetSimulation resetSimulation={this.props.resetSimulation}/>
-            <ToggleFrozenButton
-              toggleSimulationFrozen={this.props.toggleSimulationFrozen}
-              frozen={this.props.frozen}
-            />
-            <FeatureBar updateProgress={this.props.selectPaletteFeatureAmount}
-              progress={this.props.paletteFeatureAmount}
-              width={200} height={50} color={[0, 100, 200]}
-              background={[0, 200, 200]}
-            />
-            <div>
-              {featureButtonSets}
-            </div>
-            <RunTests runTests={this.props.runTests}/>
-          </div>
+      <MuiThemeProvider theme={theme}>
+        {/* <Button variant="contained" color="primary">
+          Hello World
+        </Button> */}
+        <ResetSimulation resetSimulation={this.props.resetSimulation}/>
+        <ToggleFrozenButton
+          toggleSimulationFrozen={this.props.toggleSimulationFrozen}
+          frozen={this.props.frozen}
+        />
+        <FeatureBar updateProgress={this.props.selectPaletteFeatureAmount}
+          progress={this.props.paletteFeatureAmount}
+          width={200} height={50} color={[0, 100, 200]}
+          background={[0, 200, 200]}
+        />
+        <div>
+          {featureButtonSets}
         </div>
-        {/* Duncan put this here to play with it
-        <div className="row">
-          <div className="col">
-            <label for="customRange1">Example range</label>
-            <input type="range" class="custom-range" id="customRange1"/>
-          </div>
-        </div>
-        */}
-      </div>
+        <RunTests runTests={this.props.runTests}/>
+      </MuiThemeProvider>
     );
   }
 }
 
 function ResetSimulation(props) {
-  const reset = <FontAwesomeIcon icon={faStepBackward} />
-  return (<button type="button" className={"btn btn-secondary"}
-          onClick={props.resetSimulation}>{reset}</button>);
+  const reset = <FontAwesomeIcon icon={faStepBackward} />;
+  return (
+    <Fab color="extended" onClick={props.resetSimulation} padding={10}>
+      {reset}
+    </Fab>
+  );
 }
 
 function ToggleFrozenButton(props) {
-  const play = <FontAwesomeIcon icon={faPlay} />
-  const pause = <FontAwesomeIcon icon={faPause} />
+  const play = <FontAwesomeIcon icon={faPlay} />;
+  const pause = <FontAwesomeIcon icon={faPause} />;
   return (
-    <button type="button" className={"btn btn-secondary"} onClick={props.toggleSimulationFrozen}>
+    <Fab color="extended" onClick={props.toggleSimulationFrozen}>
       {props.frozen ? play : pause}
-    </button>
+    </Fab>
   );
 }
 
 function SelectPaletteFeatureButtons(props) {
   let radioButtons = props.paletteFeatures.map(featureID =>
-    <button
-      key={`${featureID}Selection`}
-      className={`btn btn-secondary ${props.activePaletteFeature.feature === featureID
-        && props.activePaletteFeature.featureType === props.featureType ? "active" : ""}`}
-      onClick={() => {props.selectPaletteFeature(props.featureType, featureID)}}>
-          {featureID}
-    </button>
+    <FormControlLabel
+      control={<Radio color="primary" />}
+      onChange={() => {props.selectPaletteFeature(props.featureType, featureID)}}
+      checked={props.activePaletteFeature.featureID === featureID &&
+               props.activePaletteFeature.featureType === props.featureType}
+      value={featureID}
+      label={featureID}
+      labelPlacement="start"
+    />
   );
 
   return (
-    <div className="btn-group">
+    <RadioGroup>
       {radioButtons}
-    </div>
+    </RadioGroup>
   );
 }
 
 function RunTests(props) {
-  return (<button type="button" className={"btn btn-secondary"}
-          onClick={props.runTests}> Run Tests </button>);
+  return (
+    <Button variant="contained" color="primary" onClick={props.runTests}>
+      Run Tests
+    </Button>
+  );
 }
 
 

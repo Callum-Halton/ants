@@ -1,54 +1,15 @@
-/*
-.app {
-  text-align: left;
-}
-*/
-
-/*
-.display {
+#left-controls {
   float: left;
-  width: 90%;
+  padding: 10px;
 }
-.controls {
-  float: left;
-  width: 10%;
-}
-*/
 
-/*
-.toggle-frozen-button {
-  width: 100px;
-  height: 80px;
-  font-family: Helvetica;
-  font-size: 20px;
-  background-color: cyan;
-  border: none;
-  border-radius: 20px;
+#canvas-div {
+  /* width: 1000px; */
+  margin-left: 250px;
+  margin-top: 11px;
 }
-.toogle-frozen-button:focus {
-  outline: none;
-  background-color: turquoise;
-  
-}
-*/
 
 .canvas {
   border-style: solid;
-  border-width: 2px;
-}
-
-/*
-The following, page and page-content settings, are necessary to make bootstrap
-play nicely with a fixed-width canvas element. For more on mixing fluid and
-fixed, which might be useful later, see:
-https://stackoverflow.com/questions/41914954/how-to-force-a-fixed-column-width-with-a-bootstrap-grid-and-keep-the-other-ones
-*/
-
-.page {
-  display: table;
-  width: 100%;
-}
-
-.page-content {
-  display: table-cell;
+  border-width: 1px;
 }
