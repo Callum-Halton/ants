@@ -1,4 +1,4 @@
-import { colorString, colorStringRGBA, Point } from './utils.js';
+import { colorString, colorStringRGBA } from './utils.js';
 
 export class Cell {
   constructor(terrain) {
@@ -20,14 +20,14 @@ export class Cell {
     }
   }
 
-  _doIhaveStuff() {
+  _updateHasStuff() {
     let counts = this.contentsCounts;
     for (let featureType in counts) {
       if (counts[featureType] > 0) {
-        return true;
+        this.hasStuff = true;
       }
     }
-    return false;
+    this.hasStuff = true;
   }
 
   getFeature(featureType, featureID) {
@@ -44,15 +44,16 @@ export class Cell {
     if (typeof(featureBucket[featureID]) === "undefined") {
       if (amount > 0) {
         this.contentsCounts[featureType] += 1;
+        this.hasStuff = true;
       }
       featureBucket[featureID] = amount;
     } else {
       if (featureBucket[featureID] === 0 && amount > 0) {
         this.contentsCounts[featureType] += 1;
+        this.hasStuff = true;
       }
       featureBucket[featureID] += amount;
     }
-    this.hasStuff = true;
   }
 
   // Returns the amount that was taken
@@ -67,7 +68,7 @@ export class Cell {
         featureBucket[featureID] = 0;
         if (this.contentsCounts[featureType] > 0) {
           this.contentsCounts[featureType] -= 1;
-          this.hasStuff = this._doIhaveStuff();
+          this._updateHasStuff();
         }
         return returnAmount;
       } else {
@@ -90,10 +91,6 @@ export class Cell {
   }
 
   draw(ctx, location, cellSize, frozen) {
-    let endPoint = new Point(location.x + cellSize, location.y + cellSize);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(location.x, location.y, endPoint.x, endPoint.y);
-
     if (this.hasStuff) {
       let drawCircle = false;
       let contents = this.contents;
@@ -114,21 +111,19 @@ export class Cell {
       } else if (counts["barrier"] > 0) {
         for (let barrierID in contents.barrier) {
           ctx.fillStyle = colorStringRGBA([0, 0, 0], contents.barrier[barrierID]);
-          ctx.fillRect(location.x, location.y, endPoint.x, endPoint.y);
+          ctx.fillRect(location.x, location.y, cellSize, cellSize);
         }
       } else {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(location.x, location.y, endPoint.x, endPoint.y);
         for (let markerID in contents.marker) {
-          //console.log(markerID);
+          // Might be able to optimize here by doing the alpha-blend ourselves
           ctx.fillStyle = colorStringRGBA(this._terrain.featureProfiles[markerID].color,
             contents.marker[markerID]);
-          ctx.fillRect(location.x, location.y, endPoint.x, endPoint.y);
+          ctx.fillRect(location.x, location.y, cellSize, cellSize);
         }
       }
 
       if (drawCircle) {
-        ctx.fillRect(location.x, location.y, endPoint.x, endPoint.y);
+        ctx.fillRect(location.x, location.y, cellSize, cellSize);
         ctx.fillStyle = "#000000";
         ctx.beginPath();
         ctx.arc(location.x + (cellSize / 2), location.y + (cellSize / 2), 5, 0, 2 * Math.PI);

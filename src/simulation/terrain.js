@@ -210,6 +210,10 @@ export default class Terrain {
   draw(ctx, agentsFrozen) {
     this._update();
 
+    // Background
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, this.width, this.height);
+
     // Cells
     let y = 0;
     for (let row = 0; row < this._heightInCells; row++) {
@@ -238,6 +242,7 @@ export default class Terrain {
       ctx.stroke();
     }
 
+    // Agents
     this.agentsCount = 0;
     let agentCounts = { C0 : 0, C1 : 0};
     for (let colony of this.colonies) {
@@ -245,7 +250,6 @@ export default class Terrain {
       this.agentsCount += val;
       agentCounts[colony.id] += val;
     }
-    // console.log(agentCounts);
 
   }
 }
