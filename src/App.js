@@ -1,6 +1,7 @@
 import React from 'react';
 import './App.css';
 import Simulation from './simulation/simulation.js';
+import CssBaseline from '@material-ui/core/CssBaseline';
 
 export default class App extends React.Component {
   /*
@@ -11,11 +12,14 @@ export default class App extends React.Component {
 
   render() {
     return (
-      <div className="page>">
-        <div className="page-content">
-          <Simulation />
+      <React.Fragment>
+        <CssBaseline />
+        <div className="page>">
+          <div className="page-content">
+            <Simulation />
+          </div>
         </div>
-      </div>
+      </React.Fragment>
     );
   }
 }
