@@ -2,6 +2,8 @@ import React from 'react';
 import FeatureBar from './progBar.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlay, faPause, faStepBackward } from '@fortawesome/free-solid-svg-icons';
+import { Button, TextField } from '@material-ui/core';
+
 
 export default class Controls extends React.Component {
   
@@ -22,6 +24,9 @@ export default class Controls extends React.Component {
       <div className="col">
         <div className="row">
           <div className="col">
+              <Button variant="contained" color="primary">
+      Hello World
+    </Button>
             <ResetSimulation resetSimulation={this.props.resetSimulation}/>
             <ToggleFrozenButton
               toggleSimulationFrozen={this.props.toggleSimulationFrozen}
