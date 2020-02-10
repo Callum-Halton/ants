@@ -28,12 +28,37 @@ export class Point {
   }
 }
 
+export function capitalize(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
 // Intended for implementing barriers. Lines can be passed into terrian,
 // which can then find which cells they pass through. See
-// Terrain::addBarrier()
+// Terrain::addBarrier() 
+/*
 export class Line {
   constructor(point_a, point_b) {
     this.point_a = point_a;
     this.point_b = point_b;
   }
 }
+*/
+
+/*
+export class FeatureProfile {
+  constructor(name, color, paletteFeatureAmount) {
+    this.name = name;
+    this.color = color;
+    this.paletteFeatureAmount = paletteFeatureAmount;
+    //this.expandedInEditor = false;
+  }
+}
+
+export class MarkerProfile extends FeatureProfile {
+  constructor(name, color, paletteFeatureAmount, minimumIntensity, fadeRate) {
+    super(name, color, paletteFeatureAmount);
+    this.minimumIntensity = minimumIntensity;
+    this.fadeRate = fadeRate;
+  }
+}
+*/

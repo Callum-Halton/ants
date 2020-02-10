@@ -1,16 +1,17 @@
-import { Point } from './utils.js';
+import { Point, capitalize} from './utils.js';
 import Colony from './colony.js';
+import Agent from './agent.js';
 import { Cell, CellWithLocation, CellLoc } from './cell.js';
 import CogHelper from './cogHelper.js';
 
 export default class Terrain {
   // Constructs a terrain of size width and height, consisting of square
   // cells which are of size cellSize on a side.
-  constructor(width, height, cellSize) {
+  constructor(width, height, cellSize, featureProfiles) {
     this.width = width;
     this.height = height;
     this._cellSize = cellSize;
-
+    this.featureProfiles = featureProfiles;
     this.reset();
   }
 
@@ -26,62 +27,11 @@ export default class Terrain {
       }
     }
 
-    /*this._homeLocation = new Point(Math.random() * (this.width - 100) + 50,
-                                   Math.random() * (this.height - 100) + 50);*/
-
-    this.featureProfiles = {};
-    this.colonies = [];
-
-    let colonySpec = {
-      loc                        : new Point(150, 50),
-      baseID                     : '0',
-      color                      : [255, 255, 0],
-      maxAgents                  : 1000,
-      meanStepsBetweenSpawns     : 100,
-      agent: {
-        color                    : [0, 200, 200],
-        vision                   : this._cellSize * 10,
-        radius                   : 6,
-        speed                    : 3,
-        agitated                 : 0.01,
-        resourceCarryingCapacity : 0.02,
-        markerColors             : {
-                                    resource : [0, 255, 255],
-                                    home     : [255, 255, 0],
-                                   },
-      },
+    this.featureObjects = {
+      colony: [],
+      agent: [],
     };
-    let colony = new Colony(this, colonySpec);
-    this.colonies.push(colony);
 
-    colonySpec = {
-      loc                        : new Point(750, 50),
-      baseID                     : '1',
-      color                      : [255, 0, 0],
-      maxAgents                  : 1000,
-      meanStepsBetweenSpawns     : 100,
-      agent: {
-        color                    : [200, 0, 200],
-        vision                   : this._cellSize * 10,
-        radius                   : 6,
-        speed                    : 3,
-        agitated                 : 0.01,
-        resourceCarryingCapacity : 0.02,
-        markerColors             : {
-                                    resource : [0, 0, 255],
-                                    home     : [255, 0, 0],
-                                   },
-      },
-    };
-    colony = new Colony(this, colonySpec);
-    this.colonies.push(colony);
-
-    // Resources for debugging
-    const resources = [{loc: this._pointToCellLoc(new Point(500, 500)), amount: 1}];
-    for (let resource of resources) {
-      this._grid[resource.loc.row][resource.loc.col].addFeature("resource", "food", 1);
-    }
-    //
   }
 
   _pointToCellLoc(location) {
@@ -106,9 +56,18 @@ export default class Terrain {
     }
     return bounds;
   }
-
-  addFeatureProfile(featureID, featureProfile) {
-    this.featureProfiles[featureID] = featureProfile;
+  
+  addFeatureObject(featureType, featureID, loc) {
+    if (featureType === 'agent' || featureType === 'colony') {
+      let classUsed = featureType === 'agent' ? Agent : Colony;
+      this.featureObjects[featureType].push(
+        new classUsed(
+          this, 
+          this.featureProfiles[featureType][featureID],
+          loc,
+        )
+      );
+    }
   }
 
   getAgentsCount() {
@@ -128,6 +87,11 @@ export default class Terrain {
   takeFeature(location, featureType, featureID, targetAmount) {
     let cellLoc = this._pointToCellLoc(location);
     return this._grid[cellLoc.row][cellLoc.col].takeFeature(featureType, featureID, targetAmount);
+  }
+  
+  resetCell(location) {
+    let { row, col } = this._pointToCellLoc(location);
+    this._grid[row][col].reset();
   }
 
   // Add a barrier the occupies all the cells that line passes through
@@ -204,7 +168,11 @@ export default class Terrain {
   }
 
   _update() {
-
+    let agentProfiles = this.featureProfiles.agent;
+    for (let featureID in agentProfiles) {
+      let featureProfile = agentProfiles[featureID];
+      featureProfile.localBounds = this.preCalcLocalBounds(featureProfile.vision);
+    }
   }
 
   draw(ctx, agentsFrozen) {
@@ -242,14 +210,30 @@ export default class Terrain {
       ctx.stroke();
     }
 
-    // Agents
-    this.agentsCount = 0;
-    let agentCounts = { C0 : 0, C1 : 0};
-    for (let colony of this.colonies) {
-      let val = colony.draw(ctx, agentsFrozen);
-      this.agentsCount += val;
-      agentCounts[colony.id] += val;
+    let { featureObjects } = this;
+    for (let featureType in featureObjects) {
+      let featureObjList = featureObjects[featureType];
+      for (let featureObject of featureObjList) {
+        featureObject.draw(ctx, agentsFrozen);
+      }
     }
-
+    
+    /*// Colonies
+    let { colonies } = this;
+    for (let colonyID in colonies) {
+      let coloniesWithID = colonies[colonyID];
+      for (let colony of coloniesWithID) {
+        colony.draw(ctx, agentsFrozen);
+      }
+    }
+    // Agents
+    let { agents } = this;
+    for (let agentID in agents) {
+      let agentsWithID = agents[agentID];
+      for (let agent of agentsWithID) {
+        agent.draw(ctx, agentsFrozen);
+      }
+    }
+    */
   }
 }

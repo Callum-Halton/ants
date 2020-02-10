@@ -2,33 +2,59 @@ import React from 'react';
 import Controls from './controls';
 import Terrain from './terrain';
 import Test from './test';
-import PureCanvas from './PureCanvas';
+import SimulationPane from './PureCanvas';
+import {Grid, Paper, Fab} from '@material-ui/core';
+import FeatureEditor from './FeatureEditor';
+import { Point, capitalize } from './utils.js';
+import { DefaultFeatureProfiles, DefaultMarkerProfile, 
+         DefaultColonyProfile, DefaultAgentProfile } from './defaults.js';
+
 
 class Simulation extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      width: 1000,
+      featureProfiles: new DefaultFeatureProfiles(),
+      width: 2000,
       height: 1000,
       cellSize: 20,
       frozen: true,
-      activePaletteFeature: {
-                             featureType : "resource",
-                             featureID   : "food",
-                            },
-      paletteFeatureAmount: 0.1,
+      selectedPaletteFeatureType: 'resource',
+      selectedPaletteFeatureID: 'food',
+      brushType: 'dot',
+      featureTypeInEdit: 'agent',
     };
-    this.saveContext = this.saveContext.bind(this);
     this.updateAnimationState = this.updateAnimationState.bind(this);
+    this.setFeatureTypeInEdit = this.setFeatureTypeInEdit.bind(this);
+    this.saveContext = this.saveContext.bind(this);
     this.canvasClick = this.canvasClick.bind(this);
-    this.terrain = new Terrain(this.state.width, this.state.height,
-                               this.state.cellSize);
+    this.canvasMouseMovement = this.canvasMouseMovement.bind(this);
     this.toggleSimulationFrozen = this.toggleSimulationFrozen.bind(this);
+    this.toggleBrushType = this.toggleBrushType.bind(this);
+    this.setMouseOnCanvas = this.setMouseOnCanvas.bind(this);
     this.selectPaletteFeature = this.selectPaletteFeature.bind(this);
     this.selectPaletteFeatureAmount = this.selectPaletteFeatureAmount.bind(this);
     this.resetSimulation = this.resetSimulation.bind(this);
+    this.instantiateProfile = this.instantiateProfile.bind(this);
     this.runTests = this.runTests.bind(this);
-    this.paletteFeatures = {resource: ["food"], barrier: ["wall"], marker: ["R0", "H0", "R1", "H1"]};
+
+    this.nonStateFeatureProfiles = new DefaultFeatureProfiles();
+    this.terrain = new Terrain(this.state.width, this.state.height,
+                           this.state.cellSize, this.nonStateFeatureProfiles);
+                           
+    this.mouseLoc = null;
+    this.mouseOnCanvas = false;
+    this.featureTypeAbreviations = {
+      marker: 'MA',
+      colony: 'CO',
+      agent: 'AG',
+    };
+    this.nextAvailableBaseIDs = {
+        agent: 1,
+        colony: 1,
+        marker: 1,
+    };
+    
     this.times = [];
     this.fps = null;
     this.framesLeftToShowNotice = 3 * 30;
@@ -36,6 +62,10 @@ class Simulation extends React.Component {
   
   componentDidMount() {
     this.rAF = requestAnimationFrame(this.updateAnimationState);
+    this.instantiateProfile('colony');
+    this.instantiateProfile('agent');
+    this.instantiateProfile('marker');
+    this.instantiateProfile('marker');
   }
 
   showFps() {
@@ -84,25 +114,60 @@ class Simulation extends React.Component {
     this.height = this.ctx.canvas.height;
   }
 
+  toggleBrushType() {
+    this.setState(prevState => ({
+      brushType: prevState.brushType === 'dot' ? 'line' : 'dot',
+    }));
+  }
+  
   toggleSimulationFrozen() {
     this.setState((prevState) => ({
       frozen: !prevState.frozen,
     }));
   }
-
-  selectPaletteFeature(featureBucket, featureVal) {
+  
+  setMouseOnCanvas(newMouseOnCanvas) {
+    this.mouseOnCanvas = newMouseOnCanvas;
+  }
+  
+  selectPaletteFeature(featureType, featureID) {
     this.setState({
-      activePaletteFeature: {
-                             featureType : featureBucket,
-                             featureID   : featureVal,
-                            },
+      selectedPaletteFeatureType : featureType,
+      selectedPaletteFeatureID   : featureID,
     });
   }
 
-  selectPaletteFeatureAmount(amount) {
-    this.setState({
-      paletteFeatureAmount: amount,
-    });
+  selectPaletteFeatureAmount(featureType, featureID, amount) {
+    this.changeProfile(featureType, featureID, 'paletteAmount', amount);
+  }
+  
+  changeProfile(featureType, featureID, attributeName, attributeValue) {
+    this.setState(prevState => ({
+      featureProfiles : {
+        ...prevState.featureProfiles,
+        [featureType] : {
+          ...prevState.featureProfiles[featureType],
+          [featureID] : {
+            ...prevState.featureProfiles[featureType][featureID],
+            [attributeName] : attributeValue,
+          }
+        }
+      }
+    }));
+    this.nonStateFeatureProfiles[featureType][featureID][attributeName] = attributeValue;
+  }
+  
+  addProfile(featureType, featureID, featureProfile) {
+    this.setState(prevState => ({
+      featureProfiles : {
+        ...prevState.featureProfiles,
+        [featureType] : {
+          ...prevState.featureProfiles[featureType],
+          [featureID] : featureProfile,
+        }
+      }
+    }));
+    this.nonStateFeatureProfiles[featureType][featureID] = featureProfile;
   }
 
   runTests() {
@@ -112,43 +177,100 @@ class Simulation extends React.Component {
 
   // componentDidUpdate() { }
 
+  canvasMouseMovement(nativeEvent) {
+    if (this.state.brushType === 'line' && this.mouseOnCanvas) {
+      this.canvasClick(nativeEvent);
+    }
+  }
+  
   canvasClick(nativeEvent) {
-    let clickPoint = {};
-    clickPoint.x = nativeEvent.offsetX;
-    clickPoint.y = nativeEvent.offsetY;
-    this.terrain.addFeature(clickPoint, this.state.activePaletteFeature.featureType,
-      this.state.activePaletteFeature.featureID, this.state.paletteFeatureAmount);
+    let { offsetX, offsetY } = nativeEvent;
+    if (offsetX >= 0 && offsetX <= this.state.width && offsetY >= 0 && offsetY <= this.state.height) {
+      let clickPoint = new Point(offsetX, offsetY);
+      let { selectedPaletteFeatureType, selectedPaletteFeatureID, featureProfiles } = this.state;
+      if (selectedPaletteFeatureType === 'tool') {
+        if (selectedPaletteFeatureID === 'Eraser') {
+          this.terrain.resetCell(clickPoint);
+        }
+      } else {
+        let amount = featureProfiles[selectedPaletteFeatureType][selectedPaletteFeatureID].paletteAmount;
+        this.terrain.addFeature(clickPoint, selectedPaletteFeatureType, selectedPaletteFeatureID, amount);
+        
+        if (selectedPaletteFeatureType === 'colony' || selectedPaletteFeatureType === 'agent') {
+          this.terrain.addFeatureObject(selectedPaletteFeatureType, selectedPaletteFeatureID, clickPoint);
+        }
+      }
+    }
   }
   
   resetSimulation() {
     this.terrain.reset();
   }
+  
+  setFeatureTypeInEdit(featureType) {
+    this.setState({
+      featureTypeInEdit: featureType,
+    });
+  }
+  
+  instantiateProfile(featureType) {
+    let { nextAvailableBaseIDs } = this;
+    let baseID = nextAvailableBaseIDs[featureType];
+    nextAvailableBaseIDs[featureType] += 1;
+    let id = `${this.featureTypeAbreviations[featureType]}${baseID}`;
+    let name = `${capitalize(featureType)} ${baseID}`;
+    
+    let color = [];
+    for (let colorComponent = 0; colorComponent < 3; colorComponent++) {
+      color.push(15 + (Math.random() * 225));
+    }
+    
+    let featureProfile = featureType === 'marker' ? new DefaultMarkerProfile(id, name, color, true) :
+                         featureType === 'agent' ? new DefaultAgentProfile(id, name, color, false, this.state.cellSize) :
+                         new DefaultColonyProfile(id, name, color, false);
+    
+    this.addProfile(featureType, id, featureProfile);
+  }
 
   render() {
     return (
-      <div>
-        <div id="left-controls">
-          <Controls
-            toggleSimulationFrozen={this.toggleSimulationFrozen}
-            frozen={this.state.frozen}
-            selectPaletteFeature={this.selectPaletteFeature}
-            activePaletteFeature={this.state.activePaletteFeature}
-            paletteFeatures={this.paletteFeatures}
-            selectPaletteFeatureAmount={this.selectPaletteFeatureAmount}
-            paletteFeatureAmount={this.state.paletteFeatureAmount}
-            resetSimulation={this.resetSimulation}
-            runTests={this.runTests}
-          />
-        </div>
-        <div id="canvas-div">
-          <PureCanvas
-            canvasClick={this.canvasClick}
-            width={this.state.width}
-            height={this.state.height}
-            contextRef={this.saveContext}
-          />
-        </div>
-      </div>
+      <React.Fragment>
+        <Grid container justify="center" spacing={2} style={{width: '100vw', marginTop: 10}}>
+            <Grid key={0} item>
+              <Controls
+                toggleBrushType={this.toggleBrushType}
+                brushType={this.state.brushType}
+                featureProfiles={this.state.featureProfiles}
+                toggleSimulationFrozen={this.toggleSimulationFrozen}
+                frozen={this.state.frozen}
+                selectPaletteFeature={this.selectPaletteFeature}
+                selectedFeatureType={this.state.selectedPaletteFeatureType}
+                selectedFeatureID={this.state.selectedPaletteFeatureID}
+                selectPaletteFeatureAmount={this.selectPaletteFeatureAmount}
+                resetSimulation={this.resetSimulation}
+                runTests={this.runTests}
+              />
+            </Grid>
+            <Grid key={1} item>
+                <SimulationPane
+                  setMouseOnCanvas={this.setMouseOnCanvas}
+                  canvasMouseMovement={this.canvasMouseMovement}
+                  canvasClick={this.canvasClick}
+                  paneWidth={1150}
+                  paneHeight={700}
+                  canvasWidth={this.state.width}
+                  canvasHeight={this.state.height}
+                  contextRef={this.saveContext}
+                />
+            </Grid>
+        </Grid>
+        <FeatureEditor
+          selectedFeatureType={this.state.featureTypeInEdit}
+          setSelectedFeatureType={this.setFeatureTypeInEdit}
+          featureProfilesNeeded={this.state.featureProfiles[this.state.featureTypeInEdit]}
+          addProfile={this.instantiateProfile}
+        />
+        </React.Fragment>
     );
   }
 }

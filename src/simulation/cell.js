@@ -3,15 +3,20 @@ import { colorString, colorStringRGBA } from './utils.js';
 export class Cell {
   constructor(terrain) {
     this._terrain = terrain;
-    // contents contains feature buckets, each referred to by featureType, which
-    // contain features, each referred to by featuredID.
+    this.reset();
+  }
+
+  reset() {
     this.hasStuff = false;
     this.contents = {
-// featureType : featureBucket
+    // contents contains feature buckets, each referred to by featureType, which
+    // contain features, each referred to by featureID.
+    // featureType : featureBucket
       resource : {},
       marker   : {},
       colony   : {},
       barrier  : {},
+      agent    : {},
     };
 
     this.contentsCounts = {};
@@ -19,7 +24,7 @@ export class Cell {
       this.contentsCounts[featureType] = 0;
     }
   }
-
+  
   _updateHasStuff() {
     let counts = this.contentsCounts;
     for (let featureType in counts) {
@@ -41,18 +46,26 @@ export class Cell {
 
   addFeature(featureType, featureID, amount) {
     let featureBucket = this.contents[featureType];
-    if (typeof(featureBucket[featureID]) === "undefined") {
-      if (amount > 0) {
+    if (amount === null) {
+      if (!featureBucket[featureID]) {
+        featureBucket[featureID] = 1;
         this.contentsCounts[featureType] += 1;
         this.hasStuff = true;
       }
-      featureBucket[featureID] = amount;
     } else {
-      if (featureBucket[featureID] === 0 && amount > 0) {
-        this.contentsCounts[featureType] += 1;
-        this.hasStuff = true;
+      if (typeof(featureBucket[featureID]) === "undefined") {
+        if (amount > 0) {
+          this.contentsCounts[featureType] += 1;
+          this.hasStuff = true;
+        }
+        featureBucket[featureID] = amount;
+      } else {
+        if (featureBucket[featureID] === 0 && amount > 0) {
+          this.contentsCounts[featureType] += 1;
+          this.hasStuff = true;
+        }
+        featureBucket[featureID] += amount;
       }
-      featureBucket[featureID] += amount;
     }
   }
 
@@ -81,7 +94,7 @@ export class Cell {
   _forget() {
     let markers = this.contents.marker;
     for (let markerID in markers) {
-        let markerProfile = this._terrain.featureProfiles[markerID];
+        let markerProfile = this._terrain.featureProfiles['marker'][markerID];
         // this forget rate MUST BE SLOWER THAT THE AGENTS FORGET RATE
         markers[markerID] *= markerProfile.fadeRate;
         if (markers[markerID] < markerProfile.minimumIntensity) {
@@ -92,41 +105,53 @@ export class Cell {
 
   draw(ctx, location, cellSize, frozen) {
     if (this.hasStuff) {
-      let drawCircle = false;
+      let icon = null;
       let contents = this.contents;
       let counts = this.contentsCounts;
 
-      if (counts["colony"] > 0) {
-        drawCircle = true;
+      /*if (counts.agent > 0) {
+        icon = 'circle';
+        ctx.fillStyle = '#eeeeee'
+      } else */if (counts.colony > 0) {
+        icon = 'circle';
         for (let colonyID in contents.colony) {
-          ctx.fillStyle = this._terrain.featureProfiles[colonyID].cRender;
+          ctx.fillStyle = colorString(this._terrain.featureProfiles.colony[colonyID].color);
         }
-      } else if (counts["resource"] > 0) {
-        drawCircle = true;
+      } else if (counts.resource > 0) {
+        icon = 'diamond';
         for (let resourceID in contents.resource) {
           ctx.fillStyle = colorString([(1 - contents.resource[resourceID]) * 255,
                                     255,
                                     255]);
         }
-      } else if (counts["barrier"] > 0) {
+      } else if (counts.barrier > 0) {
         for (let barrierID in contents.barrier) {
-          ctx.fillStyle = colorStringRGBA([0, 0, 0], contents.barrier[barrierID]);
+          ctx.fillStyle = colorString(this._terrain.featureProfiles.barrier[barrierID].color);
           ctx.fillRect(location.x, location.y, cellSize, cellSize);
         }
       } else {
         for (let markerID in contents.marker) {
           // Might be able to optimize here by doing the alpha-blend ourselves
-          ctx.fillStyle = colorStringRGBA(this._terrain.featureProfiles[markerID].color,
+          ctx.fillStyle = colorStringRGBA(this._terrain.featureProfiles.marker[markerID].color,
             contents.marker[markerID]);
           ctx.fillRect(location.x, location.y, cellSize, cellSize);
         }
       }
 
-      if (drawCircle) {
+      if (icon) {
         ctx.fillRect(location.x, location.y, cellSize, cellSize);
         ctx.fillStyle = "#000000";
         ctx.beginPath();
-        ctx.arc(location.x + (cellSize / 2), location.y + (cellSize / 2), 5, 0, 2 * Math.PI);
+        if (icon === 'circle') {
+          ctx.arc(location.x + (cellSize / 2), location.y + (cellSize / 2), 5, 0, 2 * Math.PI);
+        } else {
+          let sizeOfDiamond = cellSize / 2.5;
+          ctx.save();
+          ctx.translate(location.x + (cellSize / 2), location.y + (cellSize / 2) - (Math.sqrt(2) * sizeOfDiamond * 0.5));
+          ctx.rotate(90 * Math.PI / 360);
+          ctx.fillRect(0, 0, sizeOfDiamond, sizeOfDiamond);
+          ctx.restore();
+        }
         ctx.fill();
       }
 

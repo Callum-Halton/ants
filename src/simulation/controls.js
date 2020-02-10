@@ -1,80 +1,181 @@
 import React from 'react';
-import FeatureBar from './progBar.js';
+import FeaturePalette from './FeaturePalette';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faPause, faStepBackward } from '@fortawesome/free-solid-svg-icons';
-import { Button, Fab, TextField, createMuiTheme,
-         MuiThemeProvider, RadioGroup, Radio,
-         FormControlLabel} from '@material-ui/core';
+import { faPlay, faPause, faStepBackward, faPaintRoller, faPen} from '@fortawesome/free-solid-svg-icons';
+import { makeStyles } from '@material-ui/core/styles';
+import { Grid, Slider, Paper, Button, Fab, createMuiTheme, MuiThemeProvider}
+  from '@material-ui/core';
 
+const useStyles = makeStyles({
+  root : {
+    width: 190,
+    paddingTop: 1,
+    paddingBottom: 1,
+    paddingLeft: 10,
+    paddingRight: 10,
+    background: 'rgb(240, 240, 240)',
+  },
+});
+
+let flexBoxStyles = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  marginTop: 10,
+  marginBottom: 10,
+};
+
+/*
 const theme = createMuiTheme({
   overrides: {
     MuiFab: {
       root: {
-        margin: "10px",
-        padding: "10px"
+        margin: 10,
+        padding: 10
       }
     }
   }
 });
+*/
 
-export default class Controls extends React.Component {
+export default function Controls(props) {
 
-  render() {
-    let featureButtonSets = [];
-    for (let featureType in this.props.paletteFeatures) {
-      featureButtonSets.push(
-        <SelectPaletteFeatureButtons
-          key={featureType}
-          featureType={featureType}
-          selectPaletteFeature={this.props.selectPaletteFeature}
-          activePaletteFeature={this.props.activePaletteFeature}
-          paletteFeatures={this.props.paletteFeatures[featureType]}
-        />
-      );
-    }
-    return (
-      <MuiThemeProvider theme={theme}>
-        {/* <Button variant="contained" color="primary">
-          Hello World
-        </Button> */}
-        <ResetSimulation resetSimulation={this.props.resetSimulation}/>
-        <ToggleFrozenButton
-          toggleSimulationFrozen={this.props.toggleSimulationFrozen}
-          frozen={this.props.frozen}
-        />
-        <FeatureBar updateProgress={this.props.selectPaletteFeatureAmount}
-          progress={this.props.paletteFeatureAmount}
-          width={200} height={50} color={[0, 100, 200]}
-          background={[0, 200, 200]}
-        />
-        <div>
-          {featureButtonSets}
+  const classes = useStyles();
+  
+  let sliderValue = props.selectedFeatureType === 'tool' ? null :
+    props.featureProfiles[props.selectedFeatureType][props.selectedFeatureID].paletteAmount;
+  
+  return (
+    <Paper className={classes.root}>
+      {/*<MuiThemeProvider theme={theme}>*/}
+        <div style={flexBoxStyles}>
+          <ToggleBrushTypeButton
+            toggleBrushType={props.toggleBrushType}
+            brushType={props.brushType}
+          />
+          <ResetSimulation resetSimulation={props.resetSimulation}/>
+          <ToggleFrozenButton
+            toggleSimulationFrozen={props.toggleSimulationFrozen}
+            frozen={props.frozen}
+          />
         </div>
-        <RunTests runTests={this.props.runTests}/>
-      </MuiThemeProvider>
-    );
-  }
+        <div style={flexBoxStyles}>
+          <FeaturePalette 
+            featureProfiles={props.featureProfiles}
+            selectedFeatureType={props.selectedFeatureType}
+            selectedFeatureID={props.selectedFeatureID}
+            selectPaletteFeature={props.selectPaletteFeature}
+          />
+          <SelectFeatureAmountSlider
+            value={ sliderValue }
+            selectedFeatureType={props.selectedFeatureType}
+            selectedFeatureID={props.selectedFeatureID}
+            selectPaletteFeatureAmount={props.selectPaletteFeatureAmount}
+          />
+        </div>
+        {/*<RunTests runTests={props.runTests}/>*/}
+      {/*</MuiThemeProvider>*/}
+    </Paper>
+  );
 }
 
 function ResetSimulation(props) {
-  const reset = <FontAwesomeIcon icon={faStepBackward} />;
   return (
-    <Fab color="extended" onClick={props.resetSimulation} padding={10}>
-      {reset}
+    <Fab onClick={props.resetSimulation} size="medium">
+      <FontAwesomeIcon icon={faStepBackward} />
+    </Fab>
+  );
+}
+
+function ToggleBrushTypeButton(props) {
+  return (
+    <Fab onClick={props.toggleBrushType} size="medium">
+      <FontAwesomeIcon
+        icon={props.brushType === 'dot' ? faPaintRoller : faPen}
+      />
     </Fab>
   );
 }
 
 function ToggleFrozenButton(props) {
-  const play = <FontAwesomeIcon icon={faPlay} />;
-  const pause = <FontAwesomeIcon icon={faPause} />;
   return (
-    <Fab color="extended" onClick={props.toggleSimulationFrozen}>
-      {props.frozen ? play : pause}
+    <Fab onClick={props.toggleSimulationFrozen} size="medium">
+      <FontAwesomeIcon
+        icon={props.frozen ? faPlay : faPause}
+      />
     </Fab>
   );
 }
 
+function RunTests(props) {
+  return (
+    <Button variant="contained" color="primary" onClick={props.runTests}>
+      Run Tests
+    </Button>
+  );
+}
+
+class SelectFeatureAmountSlider extends React.Component {
+  
+  constructor(props) { 
+    super(props);
+    let [ value, disabled ] = this.getValueAndDisabled(props.value);
+    this.state = {
+      unprocessedValue: props.value,
+      value: value,
+      disabled: disabled,
+    };
+  }
+  
+  UNSAFE_componentWillReceiveProps(props) {
+    if (props.value !== this.state.unprocessedValue) {
+      let [ value, disabled ] = this.getValueAndDisabled(props.value);
+      this.setState({
+        unprocessedValue: props.value,
+        value: value,
+        disabled: disabled
+      });
+    }
+
+  }
+
+  getValueAndDisabled(unProcessedValue) {
+    if (unProcessedValue === null) {
+      return [0.5, true];
+    } else {
+      return [unProcessedValue, false];
+    }
+  }
+
+  updateValue(value) {
+    this.setState({
+      unprocessedValue: value,
+      value: value
+    });
+  }
+  
+  render() {
+    return(
+      <div style={{height: 310, width: 20, textAlign: 'center', marginLeft: 3}}>
+        <Slider
+          onChange={(event, value) => this.updateValue(value)}
+          onChangeCommitted={(event, value) => this.props.selectPaletteFeatureAmount(
+            this.props.selectedFeatureType, this.props.selectedFeatureID, value)}
+          value={this.state.value}
+          orientation="vertical"
+          defaultValue={0.5}
+          disabled={this.state.disabled}
+          min={0}
+          step={0.01}
+          max={1}
+          valueLabelDisplay="auto"
+        />
+      </div>
+    );
+  }
+}
+
+
+/*
 function SelectPaletteFeatureButtons(props) {
   let radioButtons = props.paletteFeatures.map(featureID =>
     <FormControlLabel
@@ -94,29 +195,4 @@ function SelectPaletteFeatureButtons(props) {
     </RadioGroup>
   );
 }
-
-function RunTests(props) {
-  return (
-    <Button variant="contained" color="primary" onClick={props.runTests}>
-      Run Tests
-    </Button>
-  );
-}
-
-
-
-            /*
-            <SelectPaletteFeatureButtons
-              featureBucket={"things"}
-              selectPaletteFeature={this.props.selectPaletteFeature}
-              activePaletteFeature={this.props.activePaletteFeature}
-              paletteFeatures={this.props.paletteFeatures.things}
-            />
-
-            <SelectPaletteFeatureButtons
-              featureBucket={"markers"}
-              selectPaletteFeature={this.props.selectPaletteFeature}
-              activePaletteFeature={this.props.activePaletteFeature}
-              paletteFeatures={this.props.paletteFeatures.markers}
-            />
-            */
+*/
