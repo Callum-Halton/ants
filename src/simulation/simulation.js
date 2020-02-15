@@ -188,16 +188,21 @@ class Simulation extends React.Component {
     if (offsetX >= 0 && offsetX <= this.state.width && offsetY >= 0 && offsetY <= this.state.height) {
       let clickPoint = new Point(offsetX, offsetY);
       let { selectedPaletteFeatureType, selectedPaletteFeatureID, featureProfiles } = this.state;
+      
       if (selectedPaletteFeatureType === 'tool') {
         if (selectedPaletteFeatureID === 'Eraser') {
           this.terrain.resetCell(clickPoint);
         }
       } else {
-        let amount = featureProfiles[selectedPaletteFeatureType][selectedPaletteFeatureID].paletteAmount;
-        this.terrain.addFeature(clickPoint, selectedPaletteFeatureType, selectedPaletteFeatureID, amount);
+        let { paletteAmount } = featureProfiles[selectedPaletteFeatureType][selectedPaletteFeatureID];
+        this.terrain.addFeature(clickPoint, selectedPaletteFeatureType, selectedPaletteFeatureID, paletteAmount);
         
         if (selectedPaletteFeatureType === 'colony' || selectedPaletteFeatureType === 'agent') {
-          this.terrain.addFeatureObject(selectedPaletteFeatureType, selectedPaletteFeatureID, clickPoint);
+          this.terrain.addFeatureObject(
+            selectedPaletteFeatureType, 
+            selectedPaletteFeatureID, 
+            {loc: clickPoint, origin: 'click'}
+          );
         }
       }
     }

@@ -3,7 +3,7 @@ import FeaturePalette from './FeaturePalette';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlay, faPause, faStepBackward, faPaintRoller, faPen} from '@fortawesome/free-solid-svg-icons';
 import { makeStyles } from '@material-ui/core/styles';
-import { Grid, Slider, Paper, Button, Fab, createMuiTheme, MuiThemeProvider}
+import { Grid, Slider, Paper, Button, Fab, createMuiTheme, MuiThemeProvider, FormControlLabel, Switch }
   from '@material-ui/core';
 
 const useStyles = makeStyles({
@@ -48,7 +48,7 @@ export default function Controls(props) {
     <Paper className={classes.root}>
       {/*<MuiThemeProvider theme={theme}>*/}
         <div style={flexBoxStyles}>
-          <ToggleBrushTypeButton
+          <ToggleBrushTypeSwitch
             toggleBrushType={props.toggleBrushType}
             brushType={props.brushType}
           />
@@ -86,23 +86,30 @@ function ResetSimulation(props) {
   );
 }
 
-function ToggleBrushTypeButton(props) {
+function ToggleBrushTypeSwitch(props) {
   return (
+    <FormControlLabel
+      value='top'
+      control={<Switch color="primary" />}
+      label=<FontAwesomeIcon icon={faPaintRoller} size='small'/>
+      labelPlacement="top"
+      style={{margin: 0}}
+    />/*
     <Fab onClick={props.toggleBrushType} size="medium">
       <FontAwesomeIcon
-        icon={props.brushType === 'dot' ? faPaintRoller : faPen}
+        icon={props.brushType === 'dot' ? faPen : faPaintRoller}
       />
-    </Fab>
+    </Fab>*/
   );
 }
 
 function ToggleFrozenButton(props) {
   return (
-    <Fab onClick={props.toggleSimulationFrozen} size="medium">
-      <FontAwesomeIcon
-        icon={props.frozen ? faPlay : faPause}
-      />
-    </Fab>
+      <Fab onClick={props.toggleSimulationFrozen} size="medium">
+        <FontAwesomeIcon
+          icon={props.frozen ? faPlay : faPause}
+        />
+      </Fab>
   );
 }
 
@@ -115,30 +122,29 @@ function RunTests(props) {
 }
 
 class SelectFeatureAmountSlider extends React.Component {
-  
+
   constructor(props) { 
     super(props);
-    let [ value, disabled ] = this.getValueAndDisabled(props.value);
+    let [ displayValue, disabled ] = this.getDisplayValueAndDisabled(props.value);
     this.state = {
       unprocessedValue: props.value,
-      value: value,
+      displayValue: displayValue,
       disabled: disabled,
     };
   }
   
   UNSAFE_componentWillReceiveProps(props) {
     if (props.value !== this.state.unprocessedValue) {
-      let [ value, disabled ] = this.getValueAndDisabled(props.value);
+      let [ displayValue, disabled ] = this.getDisplayValueAndDisabled(props.value);
       this.setState({
         unprocessedValue: props.value,
-        value: value,
+        displayValue: displayValue,
         disabled: disabled
       });
     }
-
   }
 
-  getValueAndDisabled(unProcessedValue) {
+  getDisplayValueAndDisabled(unProcessedValue) {
     if (unProcessedValue === null) {
       return [0.5, true];
     } else {
@@ -149,7 +155,7 @@ class SelectFeatureAmountSlider extends React.Component {
   updateValue(value) {
     this.setState({
       unprocessedValue: value,
-      value: value
+      displayValue: value
     });
   }
   
@@ -159,8 +165,8 @@ class SelectFeatureAmountSlider extends React.Component {
         <Slider
           onChange={(event, value) => this.updateValue(value)}
           onChangeCommitted={(event, value) => this.props.selectPaletteFeatureAmount(
-            this.props.selectedFeatureType, this.props.selectedFeatureID, value)}
-          value={this.state.value}
+            this.props.selectedFeatureType, this.props.selectedFeatureID, this.state.displayValue)}
+          value={this.state.displayValue}
           orientation="vertical"
           defaultValue={0.5}
           disabled={this.state.disabled}
@@ -173,26 +179,3 @@ class SelectFeatureAmountSlider extends React.Component {
     );
   }
 }
-
-
-/*
-function SelectPaletteFeatureButtons(props) {
-  let radioButtons = props.paletteFeatures.map(featureID =>
-    <FormControlLabel
-      control={<Radio color="primary" />}
-      onChange={() => {props.selectPaletteFeature(props.featureType, featureID)}}
-      checked={props.activePaletteFeature.featureID === featureID &&
-               props.activePaletteFeature.featureType === props.featureType}
-      value={featureID}
-      label={featureID}
-      labelPlacement="start"
-    />
-  );
-
-  return (
-    <RadioGroup>
-      {radioButtons}
-    </RadioGroup>
-  );
-}
-*/

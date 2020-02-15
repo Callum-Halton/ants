@@ -1,6 +1,4 @@
 
-import { capitalize } from './utils.js';
-
 export class DefaultFeatureProfile {
     constructor(id, name, color, quantitative) {
         this.id = id;
@@ -48,10 +46,8 @@ export class DefaultAgentProfile extends DefaultFeatureProfile {
 
 export class DefaultFeatureProfiles {
     constructor() {
-        this.resource = {};
-        this.resource.food = new DefaultFeatureProfile('food', 'food', [0, 255, 255], true);
-        this.barrier = {};
-        this.barrier.wall = new DefaultFeatureProfile('wall', 'wall', [0, 0, 0], false);
+        this.resource = {food: new DefaultFeatureProfile('food', 'Food', [0, 255, 255], true)};
+        this.barrier = {wall: new DefaultFeatureProfile('wall', 'Wall', [0, 0, 0], false)};
         this.agent = {};
         this.colony = {};
         this.marker = {};

@@ -10,44 +10,36 @@ export default class FeatureEditor extends React.Component {
   constructor(props) {
     super(props);
     this.tabOrder = ['agent', 'marker', 'colony', 'resource', 'barrier'];
+    this.featureTypeDisplayInfo = {
+      agent: {name: 'agents', iconName: faMapMarker},
+      resource: {name: 'resources', iconName: faSpa},
+      marker: {name: 'markers', iconName: faFlask},
+      barrier: {name: 'barriers', iconName: faMountain},
+      colony: {name: 'colonies', iconName: faEgg},
+    };
+    Object.freeze(this.featureTypeDisplayInfo);
   }
-  
+
   render() {
     let tabs = [];
-    let featureTypeIconName = null;
-    let featureTypeName = null;
     for (let featureType of this.tabOrder) {
-        if (featureType === 'agent') {
-          featureTypeIconName = faMapMarker;
-          featureTypeName = 'agents';
-        } else if (featureType === 'resource') {
-          featureTypeIconName = faSpa;
-          featureTypeName = 'resources';
-        } else if (featureType === 'marker') { 
-          featureTypeIconName = faFlask;
-          featureTypeName = 'markers';
-        } else if (featureType === 'barrier') { 
-          featureTypeIconName = faMountain;
-          featureTypeName = 'barriers';
-        } else {
-          featureTypeIconName = faEgg;
-          featureTypeName = 'colonies';
-        }
-        tabs.push(<Tab key={featureType} icon={<FontAwesomeIcon icon={featureTypeIconName} />} label={featureTypeName} />);
+      let { name, iconName} = this.featureTypeDisplayInfo[featureType];
+        tabs.push(<Tab key={featureType} icon={<FontAwesomeIcon icon={iconName} />} label={name} />);
     }
-    
-    let featureProfileCards = [];
+
+    let profileCards = [];
     let featureProfilesNeeded = this.props.featureProfilesNeeded;
     for (let featureID in featureProfilesNeeded) {
-      featureProfileCards.push(
-        <FeatureProfileCard 
+      profileCards.push(
+        <ProfileCard
           key={featureID}
+          featureType={this.props.selectedFeatureType}
           featureID={featureID}
           profile={featureProfilesNeeded[featureID]}
         />
       );
     }
-    
+
     return (
       <div style={{margin: 20}}>
         <AppBar position="static" style={{width: 800}}>
@@ -63,7 +55,7 @@ export default class FeatureEditor extends React.Component {
         </AppBar>
         <div style={{background:'rgb(240, 240, 240)', width: 800}}>
           <div style={{height: 400, overflow: 'scroll'}}>
-            {featureProfileCards}
+            {profileCards}
           </div>
           <AddProfileButtonBar 
             selectedFeatureType={this.props.selectedFeatureType}
@@ -75,19 +67,88 @@ export default class FeatureEditor extends React.Component {
     }
 }
 
-function FeatureProfileCard(props) {
+class ProfileCard extends React.Component {
+  constructor(props) {
+    super(props);
+    this.attributeCardOrders = {
+      resource: ['name', 'color'],
+      barrier: ['name', 'color'],
+      marker: ['name', 'color', 'fadeRate', 'minimumIntensity'],
+      colony: ['name', 'color', 'agentID', 'meanStepsBetweenSpawns', 'maxAgents'],
+      agent: ['name', 'color', 'radius', 'homeID', 'markerIDs', 'speed', 'vision', 'agitated', 'resourceCarryingCapacity', 'forgetRate']
+    };
+    Object.freeze(this.attributeCardOrders);
+
+    this.attributeNLNames = {
+      name: 'Name',
+      color: 'Color',
+      fadeRate: 'Rate of fading',
+      minimumIntensity: 'Minimum detectable intensity',
+      agentID: 'Name of ant spawned',
+      meanStepsBetweenSpawns: 'Average time to spawn an ant',
+      maxAgents: 'Maximum number of ants to spawn',
+      radius: 'Size of ant (diameter)',
+      homeID: "Name of ant's colony",
+      markerIDs: "Names of markers:",
+      speed: 'Speed',
+      vision: 'Radius of perception',
+      agitated: 'Likelihood of changing direction',
+      resourceCarryingCapacity: 'Resource carrying capacity',
+      forgetRate: 'Rate at which agent forgets'
+    };
+    Object.freeze(this.attributeNLNames);
+  }
+
+  render() {
+  
+    let attributeCards = this.attributeCardOrders[this.props.featureType].map(
+      (attribute) => <AttributeCard 
+                          key={attribute}
+                          attribute={attribute}
+                          attributeName={this.attributeNLNames[attribute]}
+                         />
+    );
+    
+    return (
+      <Paper style={{margin: 20, overflow: 'hidden', paddingBottom: 5,}}> 
+        <div style={{
+          height: 30, 
+          background: '#dddddd', 
+          display: 'flex',
+          justifyContent: 'space-between',
+          padding: 5,
+        }}>
+          <span>
+            <FontAwesomeIcon icon={faSquare} color={colorString(this.props.profile.color)} size="lg" />
+            {' ' + this.props.profile.name}
+          </span>
+          <span>
+            {'ID: ' + this.props.featureID}
+          </span>
+        </div>
+        {attributeCards}
+      </Paper>
+    );
+  }
+}
+
+function AttributeCard(props) {
   return (
-    <Paper style={{margin: 10, height: 50}}> 
-      <FontAwesomeIcon icon={faSquare} color={colorString(props.profile.color)} size="lg" />
-      {props.profile.name}
-      {props.featureID}
-    </Paper>
+    <div style={{
+      height: 40, 
+      background: '#eeeeee',
+      marginTop: 5,
+      lineHeight: '30px',
+      fontSize: 20,
+      padding: 5,
+      display: 'flex',
+      justifyContent: 'space-between',
+    }} >
+      {props.attributeName}
+    </div>
   );
 }
 
-let AddProfileButtonStyles = {
-  
-};
 
 function AddProfileButtonBar(props) {
     let addProfileButton;
@@ -110,3 +171,44 @@ function AddProfileButtonBar(props) {
     </AppBar>
   );
 }
+
+
+
+
+
+/*
+  this.attributeTypes = {
+    name: {
+      attributeFormat: 'text',
+      NLName: 'Name',
+    },
+    color: {
+      attributeFormat: 'color',
+      NLName: 'Color',
+    },
+    fadeRate: {
+      attributeFormat: 'number',
+      NLName: 'Rate of fading',
+      flippedValue: true
+    }
+    minimumIntensity: {
+      attributeFormat: 'number',
+      NLName: 'Minimum detectable intensity',
+      flippedValue: false
+    }
+    agentID: {
+      attributeFormat: 'idSelection',
+      NLName: 'ID of agent spawned'
+    }
+    meanStepsBetweenSpawns: {
+      attributeFormat: 'number',
+      NLName: 'Average time to spawn agent',
+      flippedValue: false
+    }
+    maxAgents: {
+      attributeFormat: 'number',
+      NLName: 'Average time to spawn agent',
+      flippedValue: false
+    }
+  };
+*/

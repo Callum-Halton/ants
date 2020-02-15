@@ -16,7 +16,6 @@ export default class Terrain {
   }
 
   reset() {
-    this.agentsCount = 0;
     this._widthInCells = Math.ceil(this.width/this._cellSize);
     this._heightInCells = Math.ceil(this.height/this._cellSize);
     this._grid = new Array(this._heightInCells);
@@ -57,21 +56,19 @@ export default class Terrain {
     return bounds;
   }
   
-  addFeatureObject(featureType, featureID, loc) {
-    if (featureType === 'agent' || featureType === 'colony') {
-      let classUsed = featureType === 'agent' ? Agent : Colony;
-      this.featureObjects[featureType].push(
-        new classUsed(
-          this, 
-          this.featureProfiles[featureType][featureID],
-          loc,
-        )
-      );
-    }
+  addFeatureObject(featureType, featureID, spawnContext) {
+    let classUsed = featureType === 'agent' ? Agent : Colony;
+    this.featureObjects[featureType].push(
+      new classUsed(
+        this, 
+        this.featureProfiles[featureType][featureID],
+        spawnContext,
+      )
+    );
   }
 
   getAgentsCount() {
-    return this.agentsCount;
+    return this.featureObjects.agent.length;
   }
 
   getFeature(location, featureType, featureID) {
@@ -87,6 +84,17 @@ export default class Terrain {
   takeFeature(location, featureType, featureID, targetAmount) {
     let cellLoc = this._pointToCellLoc(location);
     return this._grid[cellLoc.row][cellLoc.col].takeFeature(featureType, featureID, targetAmount);
+  }
+  
+  moveAgent(agentID, startLoc, endLoc) {
+    let { row: startRow, col: startCol } = this._pointToCellLoc(startLoc);
+    let { row: endRow, col: endCol } = this._pointToCellLoc(endLoc);
+    let { _grid } = this; 
+    
+    if (startRow !== endRow || startCol !== endCol) {
+      _grid[startRow][startCol].takeFeature('agent', agentID, 1);
+      _grid[endRow][endCol].addFeature('agent', agentID, 1);
+    }
   }
   
   resetCell(location) {
@@ -212,28 +220,10 @@ export default class Terrain {
 
     let { featureObjects } = this;
     for (let featureType in featureObjects) {
-      let featureObjList = featureObjects[featureType];
-      for (let featureObject of featureObjList) {
+      for (let featureObject of featureObjects[featureType]) {
         featureObject.draw(ctx, agentsFrozen);
       }
     }
     
-    /*// Colonies
-    let { colonies } = this;
-    for (let colonyID in colonies) {
-      let coloniesWithID = colonies[colonyID];
-      for (let colony of coloniesWithID) {
-        colony.draw(ctx, agentsFrozen);
-      }
-    }
-    // Agents
-    let { agents } = this;
-    for (let agentID in agents) {
-      let agentsWithID = agents[agentID];
-      for (let agent of agentsWithID) {
-        agent.draw(ctx, agentsFrozen);
-      }
-    }
-    */
   }
 }

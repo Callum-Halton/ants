@@ -1,11 +1,12 @@
 import { MyMath, Point, colorString } from './utils.js';
 
 export default class Agent {
-  constructor(terrain, profile, loc) {
+  constructor(terrain, profile, spawnContext) {
     // The agent can interact with the terrain via the following object
     // reference.
     this._terrain = terrain;
     this._profile = profile;
+    let { loc, origin } = spawnContext;
     this._loc = new Point(loc.x, loc.y);
     this._direction = Math.random() * 360;
     this._resourceWallet = {
@@ -16,7 +17,7 @@ export default class Agent {
     this._selected = false;
     this._memories = {
       resource : 0,
-      home     : 0.2,
+      home     : origin === 'home' ? 0.2 : 0,
     };
   }
 
@@ -60,15 +61,21 @@ export default class Agent {
   }
 
   _move() {
-    this._loc.x += this._profile.speed * MyMath.cos(this._direction);
-    this._loc.y += this._profile.speed * MyMath.sin(this._direction);
-    // Callum, I added the following checks because sometimes the agents were
-    // going off the edge of the canvas, leading to indexing out of bounds
-    // in the cell array in terrain.
-    if (this._loc.x < 0) { this._loc.x = 0; }
-    if (this._loc.y < 0) { this._loc.y = 0; }
-    if (this._loc.x >= this._terrain.width) { this._loc.x = this._terrain.height-1; }
-    if (this._loc.y >= this._terrain.height) { this._loc.y = this._terrain.width-1; }
+    let { _terrain, _loc, _profile, _direction } = this;
+    let { speed } = _profile;
+    
+    let startLoc = new Point(_loc.x, _loc.y);
+    this._loc.x += speed * MyMath.cos(_direction);
+    this._loc.y += speed * MyMath.sin(_direction);
+    
+    if (_loc.x < 0) { _loc.x = 0; }
+    if (_loc.y < 0) { _loc.y = 0; }
+    
+    let { width, height } = _terrain;
+    if (_loc.x >= width) { _loc.x = height-1; }
+    if (_loc.y >= height) { _loc.y = width-1; }
+    
+    _terrain.moveAgent(_profile.id, startLoc, _loc);
   }
 
   /*

@@ -109,10 +109,10 @@ export class Cell {
       let contents = this.contents;
       let counts = this.contentsCounts;
 
-      /*if (counts.agent > 0) {
-        icon = 'circle';
-        ctx.fillStyle = '#eeeeee'
-      } else */if (counts.colony > 0) {
+      if (counts.agent > 0) {
+        ctx.fillStyle = '#dddddd';
+        ctx.fillRect(location.x, location.y, cellSize, cellSize);
+      } else if (counts.colony > 0) {
         icon = 'circle';
         for (let colonyID in contents.colony) {
           ctx.fillStyle = colorString(this._terrain.featureProfiles.colony[colonyID].color);
