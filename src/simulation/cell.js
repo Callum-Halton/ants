@@ -18,11 +18,12 @@ export class Cell {
       barrier  : {},
       agent    : {},
     };
-
     this.contentsCounts = {};
     for (let featureType in this.contents) {
       this.contentsCounts[featureType] = 0;
     }
+
+    this.featureObjects = [];
   }
   
   _updateHasStuff() {
@@ -176,102 +177,3 @@ export class CellLoc {
     this.col = col;
   }
 }
-
-/*
-Architecture scratch-pad
-
-contents: {
-  "r0" : {
-          type: "resource",
-          amount: 1.0
-         }
-  "c0" : {
-          type : "colony",
-          amount : 1,
-         }
-  "c1" : {
-          type : "colony",
-          amount : 1,
-         }
-  "food": {
-           type : "resource",
-           amount : 1.5,
-          }
-}
-
-markers: {
-  r0 : 1
-}
-colonies : {
-  c0 : 1
-}
-resources : {
-  food : 1
-}
-*/
-
-  /*
-  _drawFeature(ctx, cellSquare, featureID) {
-    let feature = this.contents[featureID];
-    let drawCircle = false;
-    if (feature.type === "marker"){
-      ctx.fillStyle = colorStringRGBA(this._terrain.markerProfiles[featureID].color, feature.amount);
-    } else if (feature.type === "resource") {
-      ctx.fillStyle = colorString([(1 - feature.amount) * 255,
-                                255,
-                                255]);
-      drawCircle = true;
-    } else {
-      console.log(featureID);
-      ctx.fillStyle = this._terrain.colonies[parseInt(featureID.slice(1), 10)].cRender;
-      drawCircle = true;
-    }
-
-    ctx.fillRect(cellSquare.tl.x, cellSquare.tl.y, cellSquare.br.x, cellSquare.br.y);
-
-    if (drawCircle) {
-      ctx.fillStyle = "#000000";
-      ctx.beginPath();
-      let middle = cellSquare.getMiddle();
-      ctx.arc(middle.x, middle.y, 5, 0, 2 * Math.PI);
-      ctx.fill();
-    }
-  }
-  */
-
-    /*
-    let cellSquare = new Square(location, cellSize);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(cellSquare.tl.x, cellSquare.tl.y cellSquare.br.x, cellSquare.br.y);
-
-    let featuresNotDrawn = true;
-    // drawOrder of feature types
-    let drawOrder = ["colony", "resource", "marker"];
-    let drawOrderIndex = 0;
-    while (featuresNotDrawn && drawOrderIndex < drawOrder.length) {
-      let featureType = drawOrder[drawOrderIndex];
-      for (let featureID in this.contents) {
-        let feature = this.contents[featureID];
-        if (feature.type === featureType && feature.amount > 0) {
-          this._drawFeature(ctx, cellSquare, featureID);
-          featuresNotDrawn = false;
-        }
-      }
-      drawOrderIndex++;
-    }
-    */
-
-      /*
-  _hasFeaturesOfType(featureType) {
-    let featureBucket = this.contents[featureType];
-    for (let featureID in featureBucket) {
-      let featureVal = featureBucket[featureID];
-      if (typeof(featureVal) !== "undefined") {
-        if (featureVal > 0) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-  */
