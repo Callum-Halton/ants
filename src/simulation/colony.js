@@ -1,4 +1,3 @@
-import Agent from './agent.js';
 import { Point } from './utils.js';
 
 export default class Colony {

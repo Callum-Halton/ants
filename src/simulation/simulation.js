@@ -3,7 +3,7 @@ import Controls from './controls';
 import Terrain from './terrain';
 import Test from './test';
 import SimulationPane from './PureCanvas';
-import {Grid, Paper, Fab} from '@material-ui/core';
+import {Grid, Fab} from '@material-ui/core';
 import FeatureEditor from './FeatureEditor';
 import { Point, capitalize } from './utils.js';
 import { DefaultFeatureProfiles, DefaultMarkerProfile, 

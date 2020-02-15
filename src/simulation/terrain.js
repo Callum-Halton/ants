@@ -1,4 +1,4 @@
-import { Point, capitalize} from './utils.js';
+import { Point } from './utils.js';
 import Colony from './colony.js';
 import Agent from './agent.js';
 import { Cell, CellWithLocation, CellLoc } from './cell.js';

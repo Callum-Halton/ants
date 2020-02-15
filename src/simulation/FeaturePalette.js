@@ -28,8 +28,9 @@ export default withStyles({
 })(FeaturePalette);
 
 function FeaturePalette(props) {
-  
+
   let { featureProfiles, selectedFeatureID, classes } = props;
+
   let featurePaletteButtons = [
         <FeaturePaletteToolButton
           key={`${'tool'}:${'Eraser'}`}

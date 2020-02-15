@@ -1,9 +1,9 @@
 import React from 'react';
 import FeaturePalette from './FeaturePalette';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faPause, faStepBackward, faPaintRoller, faPen} from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faPause, faStepBackward, faPen} from '@fortawesome/free-solid-svg-icons';
 import { makeStyles } from '@material-ui/core/styles';
-import { Grid, Slider, Paper, Button, Fab, createMuiTheme, MuiThemeProvider, FormControlLabel, Switch }
+import { Slider, Paper, Button, Fab, MuiThemeProvider, FormControlLabel, Switch }
   from '@material-ui/core';
 
 const useStyles = makeStyles({
@@ -64,6 +64,7 @@ export default function Controls(props) {
             selectedFeatureType={props.selectedFeatureType}
             selectedFeatureID={props.selectedFeatureID}
             selectPaletteFeature={props.selectPaletteFeature}
+            selectPaletteFeatureAmount={props.selectPaletteFeatureAmount}
           />
           <SelectFeatureAmountSlider
             value={ sliderValue }
@@ -90,8 +91,8 @@ function ToggleBrushTypeSwitch(props) {
   return (
     <FormControlLabel
       value='top'
-      control={<Switch color="primary" />}
-      label=<FontAwesomeIcon icon={faPaintRoller} size='small'/>
+      control={<Switch color="primary" onClick={props.toggleBrushType} />}
+      label=<FontAwesomeIcon icon={faPen} />
       labelPlacement="top"
       style={{margin: 0}}
     />/*
@@ -121,6 +122,13 @@ function RunTests(props) {
   );
 }
 
+// We don't want this slider to update the simulation state continually as it's
+// being moved. However, we do want it to re-render on its own as it's being
+// moved. This component is designed to re-render on its own as it's being moved
+// and then to call back up upstream when the value has been committed.
+// UNSAFE_componentWillReceiveProps enables the slider value to be set
+// from upstream when it's selecting different features given that render()
+// only utilizes the internal component state.
 class SelectFeatureAmountSlider extends React.Component {
 
   constructor(props) { 
@@ -152,7 +160,7 @@ class SelectFeatureAmountSlider extends React.Component {
     }
   }
 
-  updateValue(value) {
+  updateValue(value, disabled) {
     this.setState({
       unprocessedValue: value,
       displayValue: value

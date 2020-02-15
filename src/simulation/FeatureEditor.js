@@ -1,6 +1,4 @@
 import React from 'react';
-import { makeStyles, withStyles } from '@material-ui/core/styles';
-import ToggleButton from '@material-ui/lab/ToggleButton';
 import { Paper, AppBar, Tabs, Tab, Fab } from '@material-ui/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpa, faMountain, faFlask, faEgg, faSquare, faPlus, faMapMarker} from '@fortawesome/free-solid-svg-icons';
