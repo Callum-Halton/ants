@@ -32,6 +32,26 @@ export function capitalize(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+export class DropContext {
+  constructor(loc, origin) {
+    this.loc = loc;
+    this.origin = origin;
+  }
+}
+
+export function FeatureObjectCounts() {
+  this.colony = 0;
+  this.agent = 0;
+}
+
+export class NumericAttributeInfo {
+  constructor(min, step, max, val, flipVal) {
+    this.min = min;
+    this.step = step;
+    this.max = max;
+  }
+}
+
 // Intended for implementing barriers. Lines can be passed into terrian,
 // which can then find which cells they pass through. See
 // Terrain::addBarrier() 

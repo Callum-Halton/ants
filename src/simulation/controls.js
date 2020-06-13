@@ -50,7 +50,7 @@ export default function Controls(props) {
         <div style={flexBoxStyles}>
           <ToggleBrushTypeSwitch
             toggleBrushType={props.toggleBrushType}
-            brushType={props.brushType}
+            brushTypeIsLine={props.brushTypeIsLine}
           />
           <ResetSimulation resetSimulation={props.resetSimulation}/>
           <ToggleFrozenButton
@@ -91,16 +91,17 @@ function ToggleBrushTypeSwitch(props) {
   return (
     <FormControlLabel
       value='top'
-      control={<Switch color="primary" onClick={props.toggleBrushType} />}
+      control={
+        <Switch 
+          color="primary" 
+          onClick={props.toggleBrushType} 
+          checked={props.brushTypeIsLine}
+        />
+      }
       label=<FontAwesomeIcon icon={faPen} />
       labelPlacement="top"
       style={{margin: 0}}
-    />/*
-    <Fab onClick={props.toggleBrushType} size="medium">
-      <FontAwesomeIcon
-        icon={props.brushType === 'dot' ? faPen : faPaintRoller}
-      />
-    </Fab>*/
+    />
   );
 }
 

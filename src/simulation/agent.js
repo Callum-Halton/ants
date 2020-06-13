@@ -1,12 +1,12 @@
-import { MyMath, Point, colorString } from './utils.js';
+import { MyMath, Point, colorString, DropContext } from './utils.js';
 
 export default class Agent {
-  constructor(terrain, profile, spawnContext) {
+  constructor(terrain, profile, dropContext) {
     // The agent can interact with the terrain via the following object
     // reference.
     this._terrain = terrain;
     this._profile = profile;
-    let { loc, origin } = spawnContext;
+    let { loc, origin } = dropContext;
     this._loc = new Point(loc.x, loc.y);
     this._direction = Math.random() * 360;
     this._resourceWallet = {
@@ -75,7 +75,7 @@ export default class Agent {
     if (_loc.x >= width) { _loc.x = height-1; }
     if (_loc.y >= height) { _loc.y = width-1; }
     
-    _terrain.moveAgent(_profile.id, startLoc, _loc);
+    _terrain.moveAgent(this, _profile.id, startLoc, _loc);
   }
 
   /*
@@ -142,7 +142,7 @@ export default class Agent {
       // First, try to consume resource
       // TODO: limit rate that agents can remove resource
       let removedResource = this._terrain.takeFeature(this._loc, "resource", "food",
-                                                         remainingCapacity);
+                                                         remainingCapacity, null);
       this._carriedResource += removedResource;
       this._resourceWallet.food += removedResource;
       if (this._carriedResource ===
@@ -241,7 +241,7 @@ export default class Agent {
     for (let thing in this._memories) {
       let markerID = this._profile.markerIDs[thing];
       if (this._memories[thing]) {
-        this._terrain.addFeature(this._loc, "marker", markerID, this._memories[thing]);
+        this._terrain.addFeature(new DropContext(this._loc, 'agent'), "marker", markerID, this._memories[thing]);
         this._memories[thing] *= this._profile.forgetRate;
         if (this._memories[thing] < markerProfiles[markerID].minimumIntensity) {
           this._memories[thing] = 0;
@@ -281,9 +281,6 @@ export default class Agent {
   }
 
   draw(ctx, agentsFrozen) {
-    if (!agentsFrozen) {
-      this._update();
-    }
     
     let cRender = colorString(this._profile.color);
     if (this._selected) {
@@ -308,5 +305,8 @@ export default class Agent {
             Math.PI * 2);
     ctx.stroke();*/
     
+    if (!agentsFrozen) {
+      this._update();
+    }
   }
 }

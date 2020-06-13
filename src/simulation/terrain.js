@@ -1,8 +1,8 @@
-import { Point } from './utils.js';
-import Colony from './colony.js';
-import Agent from './agent.js';
+import { Point, FeatureObjectCounts } from './utils.js';
 import { Cell, CellWithLocation, CellLoc } from './cell.js';
 import CogHelper from './cogHelper.js';
+import Colony from './colony.js';
+import Agent from './agent.js';
 
 export default class Terrain {
   // Constructs a terrain of size width and height, consisting of square
@@ -26,11 +26,7 @@ export default class Terrain {
       }
     }
 
-    this.featureObjects = {
-      colony: [],
-      agent: [],
-    };
-
+    this._moveOrders = [];
   }
 
   _pointToCellLoc(location) {
@@ -55,46 +51,44 @@ export default class Terrain {
     }
     return bounds;
   }
-  
-  addFeatureObject(featureType, featureID, spawnContext) {
-    let classUsed = featureType === 'agent' ? Agent : Colony;
-    this.featureObjects[featureType].push(
-      new classUsed(
-        this, 
-        this.featureProfiles[featureType][featureID],
-        spawnContext,
-      )
-    );
-  }
-
-  getAgentsCount() {
-    return this.featureObjects.agent.length;
-  }
 
   getFeature(location, featureType, featureID) {
     let cellLoc = this._pointToCellLoc(location);
     return this._grid[cellLoc.row][cellLoc.col].getFeature(featureType, featureID);
   }
 
-  addFeature(location, featureType, featureID, amount) {
-    let cellLoc = this._pointToCellLoc(location);
-    this._grid[cellLoc.row][cellLoc.col].addFeature(featureType, featureID, amount);
+  addFeature(dropContext, featureType, featureID, amount) {
+    let featureObject = null;
+    if (featureType === 'colony' || featureType === 'agent') {
+      let classUsed = featureType === 'agent' ? Agent : Colony;
+      featureObject = new classUsed(this, this.featureProfiles[featureType][featureID], dropContext);
+    }
+    
+    let cellLoc = this._pointToCellLoc(dropContext.loc);
+    this._grid[cellLoc.row][cellLoc.col].addFeature(featureType, featureID, amount, featureObject);
   }
 
-  takeFeature(location, featureType, featureID, targetAmount) {
+  takeFeature(location, featureType, featureID, targetAmount, featureObject) {
     let cellLoc = this._pointToCellLoc(location);
-    return this._grid[cellLoc.row][cellLoc.col].takeFeature(featureType, featureID, targetAmount);
+    return this._grid[cellLoc.row][cellLoc.col].takeFeature(featureType, featureID, targetAmount, featureObject);
   }
   
-  moveAgent(agentID, startLoc, endLoc) {
+  moveAgent(agent, agentID, startLoc, endLoc) {
     let { row: startRow, col: startCol } = this._pointToCellLoc(startLoc);
     let { row: endRow, col: endCol } = this._pointToCellLoc(endLoc);
-    let { _grid } = this; 
-    
+    let { _grid } = this;
+
     if (startRow !== endRow || startCol !== endCol) {
-      _grid[startRow][startCol].takeFeature('agent', agentID, 1);
-      _grid[endRow][endCol].addFeature('agent', agentID, 1);
+      this._moveOrders.push(() => {
+        _grid[startRow][startCol].takeFeature('agent', agentID, 1, agent);
+        _grid[endRow][endCol].addFeature('agent', agentID, 1, agent);
+      });
     }
+  }
+  
+  _moveAgents() {
+    this._moveOrders.forEach(moveOrder => moveOrder());
+    this._moveOrders = [];
   }
   
   resetCell(location) {
@@ -187,17 +181,17 @@ export default class Terrain {
     this._update();
 
     // Background
-    ctx.fillStyle = "#FFFFFF";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, this.width, this.height);
 
-    // Cells
+    // Cells' features
     let y = 0;
     for (let row = 0; row < this._heightInCells; row++) {
       let x = 0;
       for (let col = 0; col < this._widthInCells; col++) {
         let location = new Point(x, y);
         let cell = this._grid[row][col];
-        cell.draw(ctx, location, this._cellSize, agentsFrozen);
+        cell.drawFeatures(ctx, location, this._cellSize, agentsFrozen);
         x = x + this._cellSize;
       }
       y = y + this._cellSize;
@@ -217,13 +211,19 @@ export default class Terrain {
       ctx.lineTo(this.width, lineY);
       ctx.stroke();
     }
-
-    let { featureObjects } = this;
-    for (let featureType in featureObjects) {
-      for (let featureObject of featureObjects[featureType]) {
-        featureObject.draw(ctx, agentsFrozen);
+    
+    // Cells' feature objects
+    let featureObjectCounts = new FeatureObjectCounts;
+    for (let row of this._grid) {
+      for (let cell of row) {
+        let { colony, agent } = cell.drawFeatureObjects(ctx, agentsFrozen);
+        featureObjectCounts.colony += colony;
+        featureObjectCounts.agent += agent;
       }
     }
     
+    this._moveAgents();
+    
+    return featureObjectCounts;
   }
 }

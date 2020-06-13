@@ -1,8 +1,8 @@
 import React from 'react';
-import { Paper, AppBar, Tabs, Tab, Fab } from '@material-ui/core';
+import { Paper, AppBar, Tabs, Tab, Fab, Slider } from '@material-ui/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpa, faMountain, faFlask, faEgg, faSquare, faPlus, faMapMarker} from '@fortawesome/free-solid-svg-icons';
-import { colorString } from './utils.js';
+import { colorString, NumericAttributeInfo } from './utils.js';
 
 export default class FeatureEditor extends React.Component {
   constructor(props) {
@@ -34,6 +34,7 @@ export default class FeatureEditor extends React.Component {
           featureType={this.props.selectedFeatureType}
           featureID={featureID}
           profile={featureProfilesNeeded[featureID]}
+          changeProfile={this.props.changeProfile}
         />
       );
     }
@@ -52,7 +53,7 @@ export default class FeatureEditor extends React.Component {
           </Tabs>
         </AppBar>
         <div style={{background:'rgb(240, 240, 240)', width: 800}}>
-          <div style={{height: 400, overflow: 'scroll'}}>
+          <div style={{height: 600, overflow: 'scroll'}}>
             {profileCards}
           </div>
           <AddProfileButtonBar 
@@ -95,20 +96,33 @@ class ProfileCard extends React.Component {
       forgetRate: 'Rate at which agent forgets'
     };
     Object.freeze(this.attributeNLNames);
+    
+    this.changeAttribute = this.changeAttribute.bind(this);
+  }
+
+  changeAttribute(attribute, attributeVal) {
+    let { featureType, featureID } = this.props;
+    this.props.changeProfile(featureType, featureID, attribute, attributeVal);
   }
 
   render() {
-  
     let attributeCards = this.attributeCardOrders[this.props.featureType].map(
       (attribute) => <AttributeCard 
-                          key={attribute}
-                          attribute={attribute}
-                          attributeName={this.attributeNLNames[attribute]}
-                         />
+                        key={attribute}
+                        attribute={attribute}
+                        attributeVal={this.props.profile[attribute]}
+                        attributeNLName={this.attributeNLNames[attribute]}
+                        changeAttribute={this.changeAttribute}
+                      />
     );
     
     return (
-      <Paper style={{margin: 20, overflow: 'hidden', paddingBottom: 5,}}> 
+      <Paper style={{
+        margin: 20, 
+        overflow: 'hidden', 
+        paddingBottom: 5, 
+        background: '#f9f9f9'
+      }}> 
         <div style={{
           height: 30, 
           background: '#dddddd', 
@@ -130,21 +144,108 @@ class ProfileCard extends React.Component {
   }
 }
 
+
+const AttributeCardFieldStyles = {
+  height: '100%', 
+  width: '50%',
+  paddingLeft: 20,
+  paddingRight: 20,
+};
+      
 function AttributeCard(props) {
+  let attributesOfTypeIDSelect = ['homeID', 'agentID', 'markerIDs'];
+  
+  let { attribute, attributeVal } = props;
+  let attributeInput = <div style={{background: 'red', height: '100%'}}/>;
+  if (attribute === 'name') {
+  } else if (attribute === 'color') {
+  } else if (attributesOfTypeIDSelect.includes(attribute)) {
+  } else {
+    attributeInput =
+      <AttributeSlider
+        attribute={attribute}
+        value={attributeVal}
+        changeAttribute={props.changeAttribute}
+      />;
+  }
+  
   return (
     <div style={{
       height: 40, 
-      background: '#eeeeee',
+      background: '#ffffff',
       marginTop: 5,
-      lineHeight: '30px',
-      fontSize: 20,
-      padding: 5,
       display: 'flex',
-      justifyContent: 'space-between',
     }} >
-      {props.attributeName}
+      <div style={AttributeCardFieldStyles}>
+        <span style={{lineHeight: '40px', fontSize: 20}}>
+          {props.attributeNLName}
+        </span>
+      </div>
+      <div style={AttributeCardFieldStyles}>
+        {attributeInput}
+      </div>
     </div>
   );
+}
+
+class AttributeSlider extends React.Component {
+  constructor(props) {
+    super(props);
+    this.numericAttributesInfo = {
+      fadeRate: new NumericAttributeInfo(0, 0.0006, 0.006),
+      minimumIntensity: new NumericAttributeInfo(0, 0.0002, 0.02),
+      meanStepsBetweenSpawns: new NumericAttributeInfo(0, 1, 200),
+      maxAgents: new NumericAttributeInfo(0, 10, 2000),
+      radius: new NumericAttributeInfo(3, 1, 20),
+      speed: new NumericAttributeInfo(1, 1, 20),
+      vision: new NumericAttributeInfo(0, 1, 100),
+      agitated: new NumericAttributeInfo(0, 0.0002, 0.02),
+      resourceCarryingCapacity: new NumericAttributeInfo(0, 0.0004, 0.04),
+      forgetRate: new NumericAttributeInfo(0, 0.01, 1),
+    };
+  }
+  render() {
+    let { attribute } = this.props;
+    let { min, step, max} = this.numericAttributesInfo[attribute];
+    let valueProcessing = v => v;
+    if (attribute === 'fadeRate' || attribute === 'forgetRate') {
+      valueProcessing = v => 1 - v;
+    }
+    
+    return(
+      <React.Fragment>
+        <Slider 
+          style={{
+            width: '70%',
+            height: '50%',
+            margin: 0,
+            padding: 0,
+            paddingTop: 20
+          }}
+          onChange={(event, value) => this.props.changeAttribute(attribute, valueProcessing(value))}
+          value={valueProcessing(this.props.value)}
+          min={min}
+          step={step}
+          max={max}
+        />
+        <div style={{
+          background: 'rgb(65, 84, 175)',
+          width: 'calc( 30% - 15px)', 
+          height: 'calc( 100% - 10px)',
+          margin: 5,
+          marginLeft: 15,
+          marginRight: 0,
+          borderRadius: 5,
+          display: 'inline-block',
+          overflow: 'hidden',
+          fontSize: 20,
+          color: 'white',
+        }}>
+          {valueProcessing(this.props.value)}
+        </div>
+      </React.Fragment>
+    );
+  }
 }
 
 
@@ -169,44 +270,3 @@ function AddProfileButtonBar(props) {
     </AppBar>
   );
 }
-
-
-
-
-
-/*
-  this.attributeTypes = {
-    name: {
-      attributeFormat: 'text',
-      NLName: 'Name',
-    },
-    color: {
-      attributeFormat: 'color',
-      NLName: 'Color',
-    },
-    fadeRate: {
-      attributeFormat: 'number',
-      NLName: 'Rate of fading',
-      flippedValue: true
-    }
-    minimumIntensity: {
-      attributeFormat: 'number',
-      NLName: 'Minimum detectable intensity',
-      flippedValue: false
-    }
-    agentID: {
-      attributeFormat: 'idSelection',
-      NLName: 'ID of agent spawned'
-    }
-    meanStepsBetweenSpawns: {
-      attributeFormat: 'number',
-      NLName: 'Average time to spawn agent',
-      flippedValue: false
-    }
-    maxAgents: {
-      attributeFormat: 'number',
-      NLName: 'Average time to spawn agent',
-      flippedValue: false
-    }
-  };
-*/

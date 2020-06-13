@@ -5,25 +5,25 @@ import Test from './test';
 import SimulationPane from './PureCanvas';
 import {Grid, Fab} from '@material-ui/core';
 import FeatureEditor from './FeatureEditor';
-import { Point, capitalize } from './utils.js';
+import { Point, capitalize, DropContext, FeatureObjectCounts } from './utils.js';
 import { DefaultFeatureProfiles, DefaultMarkerProfile, 
          DefaultColonyProfile, DefaultAgentProfile } from './defaults.js';
-
 
 class Simulation extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       featureProfiles: new DefaultFeatureProfiles(),
-      width: 2000,
-      height: 1000,
+      width: 1500,
+      height: 800,
       cellSize: 20,
       frozen: true,
       selectedPaletteFeatureType: 'resource',
       selectedPaletteFeatureID: 'food',
-      brushType: 'dot',
+      brushTypeIsLine: true,
       featureTypeInEdit: 'agent',
     };
+    this.changeProfile = this.changeProfile.bind(this);
     this.updateAnimationState = this.updateAnimationState.bind(this);
     this.setFeatureTypeInEdit = this.setFeatureTypeInEdit.bind(this);
     this.saveContext = this.saveContext.bind(this);
@@ -41,6 +41,7 @@ class Simulation extends React.Component {
     this.nonStateFeatureProfiles = new DefaultFeatureProfiles();
     this.terrain = new Terrain(this.state.width, this.state.height,
                            this.state.cellSize, this.nonStateFeatureProfiles);
+    this.featureObjectCounts = new FeatureObjectCounts;
                            
     this.mouseLoc = null;
     this.mouseOnCanvas = false;
@@ -49,6 +50,7 @@ class Simulation extends React.Component {
       colony: 'CO',
       agent: 'AG',
     };
+    Object.freeze(this.featureTypeAbreviations);
     this.nextAvailableBaseIDs = {
         agent: 1,
         colony: 1,
@@ -72,7 +74,7 @@ class Simulation extends React.Component {
     this.ctx.fillStyle = "#000000";
     this.ctx.font = "30px Courier";
     const xPos = this.state.width-240;
-    this.ctx.fillText(this.terrain.getAgentsCount() + " AGENTS", xPos, this.state.height-50);
+    this.ctx.fillText(this.featureObjectCounts.agent + " AGENTS", xPos, this.state.height-50);
     this.ctx.fillText(this.fps + " FPS", xPos, this.state.height-20);
   }
 
@@ -89,7 +91,7 @@ class Simulation extends React.Component {
 
   updateAnimationState() {
     this.rAF = requestAnimationFrame(() => {
-      this.terrain.draw(this.ctx, this.state.frozen);
+      this.featureObjectCounts = this.terrain.draw(this.ctx, this.state.frozen);
       this.showFps();
       this.showNotice();
       const now = performance.now();
@@ -110,13 +112,11 @@ class Simulation extends React.Component {
 
   saveContext(ctx) {
     this.ctx = ctx;
-    this.width = this.ctx.canvas.width;
-    this.height = this.ctx.canvas.height;
   }
 
   toggleBrushType() {
     this.setState(prevState => ({
-      brushType: prevState.brushType === 'dot' ? 'line' : 'dot',
+      brushTypeIsLine: !prevState.brushTypeIsLine,
     }));
   }
   
@@ -178,7 +178,7 @@ class Simulation extends React.Component {
   // componentDidUpdate() { }
 
   canvasMouseMovement(nativeEvent) {
-    if (this.state.brushType === 'line' && this.mouseOnCanvas) {
+    if (this.state.brushTypeIsLine && this.mouseOnCanvas) {
       this.canvasClick(nativeEvent);
     }
   }
@@ -195,15 +195,10 @@ class Simulation extends React.Component {
         }
       } else {
         let { paletteAmount } = featureProfiles[selectedPaletteFeatureType][selectedPaletteFeatureID];
-        this.terrain.addFeature(clickPoint, selectedPaletteFeatureType, selectedPaletteFeatureID, paletteAmount);
-        
-        if (selectedPaletteFeatureType === 'colony' || selectedPaletteFeatureType === 'agent') {
-          this.terrain.addFeatureObject(
-            selectedPaletteFeatureType, 
-            selectedPaletteFeatureID, 
-            {loc: clickPoint, origin: 'click'}
-          );
+        if (paletteAmount === null) {
+          paletteAmount = 1;
         }
+        this.terrain.addFeature(new DropContext(clickPoint, 'click'), selectedPaletteFeatureType, selectedPaletteFeatureID, paletteAmount);
       }
     }
   }
@@ -244,7 +239,7 @@ class Simulation extends React.Component {
             <Grid key={0} item>
               <Controls
                 toggleBrushType={this.toggleBrushType}
-                brushType={this.state.brushType}
+                brushTypeIsLine={this.state.brushTypeIsLine}
                 featureProfiles={this.state.featureProfiles}
                 toggleSimulationFrozen={this.toggleSimulationFrozen}
                 frozen={this.state.frozen}
@@ -270,6 +265,7 @@ class Simulation extends React.Component {
             </Grid>
         </Grid>
         <FeatureEditor
+          changeProfile={this.changeProfile}
           selectedFeatureType={this.state.featureTypeInEdit}
           setSelectedFeatureType={this.setFeatureTypeInEdit}
           featureProfilesNeeded={this.state.featureProfiles[this.state.featureTypeInEdit]}

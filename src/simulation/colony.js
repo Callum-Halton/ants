@@ -1,10 +1,10 @@
 import { Point } from './utils.js';
 
 export default class Colony {
-  constructor(terrain, profile, spawnContext) {
+  constructor(terrain, profile, dropContext) {
     this._terrain = terrain;
     this._profile = profile;
-    let { x, y } = spawnContext.loc;
+    let { x, y } = dropContext.loc;
     this._loc = new Point(x, y);
     this._agentsSpawned = 0;
     this._stepsUntilSpawn = 1;
@@ -13,10 +13,11 @@ export default class Colony {
   spawnAgents() {
     this._stepsUntilSpawn -= 1;
     if (this._agentsSpawned < this._profile.maxAgents && this._stepsUntilSpawn <= 0) {
-      this._terrain.addFeatureObject(
+      this._terrain.addFeature(
+        {loc: this._loc, origin: 'home'},
         'agent', 
         this._profile.agentID, 
-        {loc: this._loc, origin: 'home'}
+        1
       );
       this._stepsUntilSpawn = Math.floor(
         Math.random() * this._profile.meanStepsBetweenSpawns * 2);
